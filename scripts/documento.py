@@ -232,6 +232,7 @@ lista([
     "Con la Colección 2 la plantación concilia (mediana de 0,07 %), pero la infraestructura difiere cerca de 3 % de forma sistemática. La imagen de Earth Engine no es exactamente la versión de las estadísticas publicadas, y por eso esa colección se usa como análisis de sensibilidad.",
     "Las franjas de seis comunas se recalcularon con un método independiente (polígonos, buffer en UTM y área elipsoidal). Las diferencias fueron menores a 1 % en la franja de 500 m y a 3 % en la de 200 m, y llegaron a 9 % en la de 100 m.",
     f"La suma de la plantación de los {n0(n_sect)} sectores ({n0(suma_sect)} ha) difiere en {n1(abs(suma_sect / c1['2022']['plantacion_100m_ha'] - 1) * 100)} % de la cifra nacional a menos de 100 m. Ninguna comuna con 5 ha o más a esa distancia queda sin sectores, y su ubicación se revisó en mapas de control.",
+    "En la búsqueda por dirección, la distancia de 12 celdas al azar se recalculó directamente sobre el ráster, con una diferencia máxima de 2 m.",
     "Hay pruebas automáticas del filtro de zonas pobladas y del cálculo de Mantel-Haenszel, y las comunas sin plantación dan cero.",
     "El control encontró dos errores, que se corrigieron antes de entregar. Los mapas de control mostraron que la infraestructura incluía carreteras, y la verificación independiente mostró que la primera versión medía la distancia de centro a centro de píxel, lo que subestimaba la franja de 100 m en cerca de 15 %.",
 ])
@@ -286,6 +287,7 @@ doc.add_heading("9. La herramienta", 1)
 lista([
     "Inicio con las cifras nacionales, el contraste con incendios, un mapa clicable de las comunas de Valparaíso a Los Lagos, los 25 sectores con más plantación junto a zonas pobladas y un ranking filtrable por región.",
     "Una ficha por comuna (343) con mapa, sectores numerados con enlace a OpenStreetMap, comunas vecinas, tabla por distancia en ambas colecciones, indicación de si las colecciones coinciden en la tendencia, contraste con incendios cuando hay cobertura de Fuego y usos para el municipio.",
+    "Búsqueda por dirección o con la ubicación del navegador: muestra a cuántos metros está la plantación más cercana, cuántas hectáreas hay en 500 m y si hubo área quemada cerca entre 2023 y 2025. La ubicación del navegador no se envía a ningún servicio externo.",
     "Metodología completa con antecedentes, control de calidad y limitaciones.",
     "Datos descargables en CSV y código abierto en Python (rasterio, numpy, scipy, geopandas) y en la web (Next.js, exportación estática).",
 ])
