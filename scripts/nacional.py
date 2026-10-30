@@ -1,5 +1,6 @@
 """Calcula la franja plantación-ciudad y la validación con Fuego para las 343 comunas."""
 import json
+import os
 import re
 import sys
 import unicodedata
@@ -22,9 +23,12 @@ def _norm(s):
 
 
 if COLECCION == "1":
-    stats = json.load(open("data/stats_col1_comunas.json"))
+    # La estadística oficial de la Colección 1 solo se usa como control; si no está disponible, el campo queda vacío
+    stats = json.load(open("data/stats_col1_comunas.json")) if os.path.exists("data/stats_col1_comunas.json") else None
 
     def oficial(fid, nombre):
+        if stats is None:
+            return None
         cl = stats.get(fid, {}).get("clases", {})
         return {a: {"plantacion_ha": cl.get("9", {}).get(a, 0), "urbano_ha": cl.get("24", {}).get(a, 0),
                     "area_ha": sum(x[a] for x in cl.values())} for a in ("2000", "2022")}
