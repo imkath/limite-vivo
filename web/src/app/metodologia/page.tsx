@@ -117,6 +117,12 @@ export default function Metodologia() {
             colaboradores de OpenStreetMap, licencia ODbL). Si ese lugar está a más de 500 m se indica la distancia, y si está a
             más de 2 km el sector se identifica solo por sus coordenadas. Es una referencia para ubicarse, no un límite oficial.
           </li>
+          <li>
+            Búsqueda por dirección. Las zonas pobladas y un margen de 200 m se dividen en celdas de 0,001° (unos 100 m). Para cada
+            celda se guarda la distancia hasta el borde de la plantación más cercana (con tope de 3 km), las hectáreas de
+            plantación en un radio de 500 m y si hubo área quemada a menos de 500 m entre 2023 y 2025. La dirección se ubica con
+            Nominatim de OpenStreetMap, o con la ubicación del navegador, que no se envía a ningún servicio externo.
+          </li>
         </ol>
       </section>
 
@@ -147,6 +153,10 @@ export default function Metodologia() {
             nacional a menos de 100 m ({ha(r.nacional.col1["2022"].plantacion_100m_ha)}), porque se descartan tramos muy cortos y porque parte de la plantación se asigna a bordes de comunas
             vecinas. Ninguna comuna con 5 ha o más a menos de 100 m queda sin sectores, y la ubicación de los sectores se revisó
             sobre mapas de control en Tomé, Viña del Mar y Cabrero.
+          </li>
+          <li>
+            La distancia guardada en 12 celdas al azar de la búsqueda por dirección se recalculó directamente sobre el ráster,
+            con una diferencia máxima de 2 m.
           </li>
           <li>
             Revisando mapas de control de Viña del Mar, Santa Juana y Tomé se detectó que la infraestructura incluía carreteras, lo

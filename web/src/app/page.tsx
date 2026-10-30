@@ -38,6 +38,13 @@ export default function Inicio() {
           Los cálculos usan los mapas de MapBiomas Chile.
         </p>
         <Buscador comunas={r.comunas} />
+        <p className="text-sm text-muted">
+          ¿Quieres la cifra de tu propia casa? Revisa{" "}
+          <Link href="/direccion/" className="text-link underline">
+            a cuántos metros de tu dirección hay plantación forestal
+          </Link>
+          .
+        </p>
       </section>
 
       <section aria-labelledby="chile" className="space-y-4">
