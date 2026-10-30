@@ -28,8 +28,16 @@ export default function Sectores({ sectores, conFuego }: { sectores: Sector[]; c
           </thead>
           <tbody>
             {visibles.map((s) => (
-              <tr key={s.n} className="border-b border-line">
-                <td className="py-2 pr-2 text-muted">{s.n}</td>
+              <tr key={s.n} id={`sector-${s.n}`} className="fila-sector border-b border-line">
+                <td className="py-2 pr-2">
+                  {s.marca ? (
+                    <a href={`#marca-${s.n}`} className="text-link underline" aria-label={`Ver el sector ${s.n} en el mapa`}>
+                      {s.n}
+                    </a>
+                  ) : (
+                    <span className="text-muted">{s.n}</span>
+                  )}
+                </td>
                 <td className="py-2 pr-2">{nombreSector(s)}</td>
                 <td className="hidden py-2 pr-2 text-right sm:table-cell">{nf0.format(Math.round(s.borde_m / 10) * 10)} m</td>
                 <td className="py-2 pr-2 text-right">{s.plantacion_100m_ha < 1 ? "menos de 1 ha" : ha(s.plantacion_100m_ha)}</td>

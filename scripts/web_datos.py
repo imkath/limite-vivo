@@ -85,7 +85,19 @@ con = [f for f in orden if f["col1"]["2022"]["plantacion_500m_ha"] >= 1]
 for i, f in enumerate(orden):
     f["puesto"] = i + 1 if f["col1"]["2022"]["plantacion_500m_ha"] >= 1 else None
     f["puesto_de"] = len(con)
+# Tamaño de cada mapa, para reservar su espacio en la página y que el texto no salte al cargar,
+# y posición de los marcadores numerados (scripts/mapas.py) para enlazarlos con la tabla de sectores
+from PIL import Image
+marcas = json.load(open("out/mapas_marcas.json")) if Path("out/mapas_marcas.json").exists() else {}
 for f in filas:
+    for sct in f["sectores"]:
+        pos = marcas.get(f["slug"], {}).get(str(sct["n"]))
+        if pos:
+            sct["marca"] = pos
+    ruta = Path("web/public/mapas") / f"{f['slug']}.webp"
+    if ruta.exists():
+        with Image.open(ruta) as im:
+            f["mapa_px"] = list(im.size)
     json.dump(f, open(OUT / "comunas" / f"{f['slug']}.json", "w"), ensure_ascii=False)
 
 

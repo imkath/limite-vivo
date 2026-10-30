@@ -17,7 +17,10 @@ export type Sector = {
   quemada_ha: number | null;
   lugar: string;
   lugar_m: number;
+  /** Posición del marcador numerado en la imagen del mapa, en % del ancho y del alto */
+  marca?: [number, number];
 };
+export type SectorBreve = Pick<Sector, "n" | "lugar" | "lugar_m" | "plantacion_100m_ha">;
 export type Fuego = {
   plantacion_ha: number;
   plantacion_quemada_ha: number;
@@ -38,6 +41,7 @@ export type Comuna = {
   fuego_col2: Fuego | null;
   fuego_cubierta: boolean;
   sectores: Sector[];
+  mapa_px?: [number, number];
   quemado_2023_2025_ha: number;
   serie_col2: { anios: number[]; plantacion: number[]; urbano: number[] };
   puesto: number | null;
@@ -57,7 +61,7 @@ export type FilaResumen = {
   p500_2024_c2: number;
   fuego: boolean;
   sectores_n: number;
-  sectores_top3: Sector[];
+  sectores_top3: SectorBreve[];
 };
 export type Resumen = {
   nacional: { col1: Record<string, Franja>; col2: Record<string, Franja> };
@@ -85,3 +89,30 @@ export const CITAS = [
   "MapBiomas – Colección 1 de MapBiomas Fuego Chile (área quemada anual), consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
 ];
 
+
+/** Solo los campos que usan el buscador, el ranking y el mapa, para no enviar datos de más al navegador. */
+export function filasLivianas(r: Resumen): FilaResumen[] {
+  return r.comunas.map((c) => ({
+    slug: c.slug,
+    comuna: c.comuna,
+    region: c.region,
+    puesto: c.puesto,
+    p500_2000: c.p500_2000,
+    p500_2022: c.p500_2022,
+    p100_2022: c.p100_2022,
+    p500_2024_c2: 0,
+    fuego: c.fuego,
+    sectores_n: c.sectores_n,
+    sectores_top3: c.sectores_top3.map((x) => ({
+      n: x.n,
+      lugar: x.lugar,
+      lugar_m: x.lugar_m,
+      plantacion_100m_ha: x.plantacion_100m_ha,
+    })),
+  }));
+}
+
+/** Para el buscador basta con el nombre, la región y la cifra de 500 m. */
+export function filasBuscador(r: Resumen) {
+  return r.comunas.map((c) => ({ slug: c.slug, comuna: c.comuna, region: c.region, p500_2022: c.p500_2022 }));
+}

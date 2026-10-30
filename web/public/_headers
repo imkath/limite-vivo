@@ -1,0 +1,14 @@
+# Cloudflare Pages: los archivos con hash en el nombre no cambian nunca
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Mapas y datos: un día de caché, se revalidan al publicar una versión nueva
+/mapas/*
+  Cache-Control: public, max-age=86400
+/datos/*
+  Cache-Control: public, max-age=86400
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self), camera=(), microphone=()

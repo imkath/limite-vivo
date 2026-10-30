@@ -84,3 +84,41 @@ a[target="_blank"]::after {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
+
+/* Marcador del mapa de ajuste: punto de tinta con borde blanco, visible sobre cualquier fondo */
+.pin-ajuste {
+  border-radius: 50%;
+  background: var(--ink);
+  border: 3px solid #ffffff;
+  outline: 1px solid var(--ink);
+  cursor: grab;
+}
+.pin-ajuste:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+/* Marcadores del mapa comunal enlazados con la tabla de sectores (y al revés) */
+.marca {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  scroll-margin-top: 40vh;
+}
+.marca:hover,
+.marca:focus-visible,
+.marca:target {
+  outline: 4px solid var(--link);
+  outline-offset: 2px;
+}
+.fila-sector {
+  scroll-margin-top: 30vh;
+}
+.fila-sector:target {
+  background: var(--tint);
+}
+.fila-sector:target td {
+  font-weight: 600;
+}

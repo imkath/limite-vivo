@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CITAS, comuna, resumen, vecinas, type FilaResumen, type Franja, type Fuego } from "@/lib/datos";
 import { ha, haSigno, pct, tasa } from "@/lib/formato";
 import Sectores from "@/components/Sectores";
+import { nombreSector } from "@/lib/sectores";
 
 export const dynamicParams = false;
 
@@ -192,9 +193,23 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
             )}
 
             <figure className="space-y-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/mapas/${c.slug}.webp`} alt={`Mapa de ${c.comuna} con las zonas pobladas, la plantación forestal a menos de 500 m y el área quemada entre 2023 y 2025`}
-                className="w-full border border-line" loading="lazy" />
+              <div id="mapa-sectores" className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/mapas/${c.slug}.webp`} alt={`Mapa de ${c.comuna} con las zonas pobladas, la plantación forestal a menos de 500 m y el área quemada entre 2023 y 2025`}
+                  width={c.mapa_px?.[0]} height={c.mapa_px?.[1]} className="h-auto w-full border border-line" />
+                {c.sectores.map((s) =>
+                  s.marca ? (
+                    <a
+                      key={s.n}
+                      id={`marca-${s.n}`}
+                      href={`#sector-${s.n}`}
+                      className="marca"
+                      style={{ left: `${s.marca[0]}%`, top: `${s.marca[1]}%` }}
+                      aria-label={`Sector ${s.n}, ${nombreSector(s)}. Ir a su fila en la tabla`}
+                    />
+                  ) : null,
+                )}
+              </div>
               <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
                 {LEYENDA.map(([color, texto]) => (
                   <span key={texto} className="inline-flex items-center gap-1.5">
@@ -202,7 +217,7 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
                     {texto}
                   </span>
                 ))}
-                <span>Las zonas más oscuras se quemaron entre 2023 y 2025. La línea negra es el límite comunal. Los números marcan los sectores de la tabla. Cobertura 2022, Colección 1.</span>
+                <span>Las zonas más oscuras se quemaron entre 2023 y 2025. La línea negra es el límite comunal. Los números marcan los sectores de la tabla; haz clic en uno para ir a su fila. Cobertura 2022, Colección 1.</span>
               </figcaption>
             </figure>
 

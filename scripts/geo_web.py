@@ -33,16 +33,17 @@ for i, row in m.iterrows():
 LAT0 = -37.8
 k = math.cos(math.radians(LAT0))
 zona = g[(g.geometry.centroid.y < -32.0) & (g.geometry.centroid.y > -43.7) & (g.geometry.centroid.x > -74.5)].copy()
-zona["geometry"] = zona.geometry.simplify(0.006, preserve_topology=True)
+zona["geometry"] = zona.geometry.simplify(0.008, preserve_topology=True)
 minx, miny, maxx, maxy = zona.total_bounds
 ESC = 100  # unidades SVG por grado
 
 
 def xy(x, y):
-    return round((x - minx) * k * ESC, 1), round((maxy - y) * ESC, 1)
+    return round((x - minx) * k * ESC), round((maxy - y) * ESC)
 
 
 def path(geom):
+    """Contorno en coordenadas enteras y relativas (m/l en minúscula): a este tamaño no se pierde detalle visible."""
     partes = []
     polys = getattr(geom, "geoms", [geom])
     for p in polys:
@@ -50,13 +51,18 @@ def path(geom):
             continue
         for anillo in [p.exterior, *p.interiors]:
             pts = [xy(*c) for c in anillo.coords]
-            partes.append("M" + "L".join(f"{a},{b}" for a, b in pts) + "Z")
+            limpio = [pts[0]] + [b for a, b in zip(pts, pts[1:]) if a != b]
+            if len(limpio) < 4:
+                continue
+            x0, y0 = limpio[0]
+            rel = [f"{b[0] - a[0]} {b[1] - a[1]}" for a, b in zip(limpio, limpio[1:])]
+            partes.append(f"M{x0} {y0}l" + " ".join(rel) + "z")
     return "".join(partes)
 
 
 mapa = {
-    "ancho": round((maxx - minx) * k * ESC, 1),
-    "alto": round((maxy - miny) * ESC, 1),
+    "ancho": round((maxx - minx) * k * ESC),
+    "alto": round((maxy - miny) * ESC),
     "comunas": [{"slug": s, "d": path(geo)} for s, geo in zip(zona.slug, zona.geometry) if path(geo)],
 }
 json.dump(mapa, open(f"{D}/mapa.json", "w"), separators=(",", ":"))

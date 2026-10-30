@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Ranking from "@/components/Ranking";
-import { resumen } from "@/lib/datos";
+import { filasLivianas, resumen } from "@/lib/datos";
 
 export const metadata: Metadata = {
   title: "Comunas",
@@ -20,7 +20,7 @@ export default function Comunas() {
           incendios. También puedes recorrerlas en el <Link href="/#mapa" className="text-link underline">mapa del inicio</Link>.
         </p>
       </header>
-      <Ranking filas={r.comunas} todasInicial />
+      <Ranking filas={filasLivianas(r)} todasInicial />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Buscador from "@/components/Buscador";
 import MapaComunas from "@/components/MapaComunas";
-import { mapa, resumen } from "@/lib/datos";
+import { filasBuscador, filasLivianas, mapa, resumen } from "@/lib/datos";
 import { ha, pct } from "@/lib/formato";
 
 const nf2 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -27,7 +27,7 @@ export default function Inicio() {
           Límite Vivo mide, con los mapas de MapBiomas Chile, cuánta plantación forestal hay a menos de 100, 200 y 500 metros
           de las zonas pobladas de cada comuna y en qué bordes se concentra.
         </p>
-        <Buscador comunas={r.comunas} />
+        <Buscador comunas={filasBuscador(r)} />
         <p>
           ¿Prefieres la cifra de tu casa?{" "}
           <Link href="/direccion/" className="text-link underline">Busca tu dirección</Link> y te decimos a cuántos metros está
@@ -55,7 +55,7 @@ export default function Inicio() {
           cubre de Valparaíso a Los Lagos, donde está el {pct(pctMapa)} de esa plantación; el resto del país está en el{" "}
           <Link href="/comunas/" className="text-link underline">listado de comunas</Link>.
         </p>
-        <MapaComunas mapa={m} filas={r.comunas} />
+        <MapaComunas mapa={m} filas={filasLivianas(r)} />
       </section>
 
       <section aria-labelledby="usos" className="max-w-3xl space-y-3">

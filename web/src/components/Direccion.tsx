@@ -1,38 +1,47 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import BuscadorDireccion from "@/components/BuscadorDireccion";
 import { buscarCelda, comunaDesdeDireccion, nombreComuna, type ResultadoCelda } from "@/lib/grilla";
+
+// Leaflet necesita el navegador; se descarga solo si la persona abre el mapa
+const MapaAjuste = dynamic(() => import("@/components/MapaAjuste"), {
+  ssr: false,
+  loading: () => <p className="text-sm text-muted">Cargando el mapa…</p>,
+});
 
 const nf0 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
 const nf1 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-type ResultadoNominatim = {
-  lat: string;
-  lon: string;
-  display_name: string;
+type Fuente = "gps" | "busqueda" | "mapa";
+type Ubicacion = {
+  lat: number;
+  lon: number;
+  etiqueta: string;
+  fuente: Fuente;
+  exacto?: boolean;
   address?: Record<string, string>;
 };
 
-type Ubicacion = { lat: number; lon: number; etiqueta: string; address?: Record<string, string> };
-
 export default function Direccion() {
-  const [direccion, setDireccion] = useState("");
   const resultadoRef = useRef<HTMLElement>(null);
-  const [opciones, setOpciones] = useState<ResultadoNominatim[] | null>(null);
+  const [mapaInicio, setMapaInicio] = useState<{ lat: number; lon: number } | null>(null);
   const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null);
-  const [cargando, setCargando] = useState<"geo" | "buscar" | null>(null);
+  const [cargando, setCargando] = useState<"geo" | null>(null);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState<ResultadoCelda | "fuera" | null>(null);
 
   // Al llegar un resultado, llevar la vista hasta él (salto directo, sin animación)
   useEffect(() => {
-    if (!resultado || !ubicacion) return;
+    if (!resultado || !ubicacion || ubicacion.fuente === "mapa") return;
     resultadoRef.current?.scrollIntoView({ block: "start" });
   }, [resultado, ubicacion]);
   const [comunaCercana, setComunaCercana] = useState<{ slug: string; comuna: string } | null>(null);
   const [comunaNombre, setComunaNombre] = useState<string | null>(null);
 
   async function consultarGrilla(u: Ubicacion) {
+    if (u.fuente !== "mapa") setMapaInicio(null);
     setUbicacion(u);
     setResultado(null);
     setComunaCercana(null);
@@ -52,7 +61,6 @@ export default function Direccion() {
 
   function usarMiUbicacion() {
     setError("");
-    setOpciones(null);
     if (!("geolocation" in navigator)) {
       setError("Este navegador no entrega la ubicación del equipo.");
       return;
@@ -65,6 +73,7 @@ export default function Direccion() {
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
           etiqueta: "Tu ubicación actual",
+          fuente: "gps",
         });
       },
       () => {
@@ -73,38 +82,6 @@ export default function Direccion() {
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
-  }
-
-  async function buscarDireccion(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setOpciones(null);
-    setResultado(null);
-    const q = direccion.trim();
-    if (!q) return;
-    setCargando("buscar");
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=cl&limit=5&accept-language=es&addressdetails=1&q=${encodeURIComponent(q)}`;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error("fetch");
-      const datos = (await r.json()) as ResultadoNominatim[];
-      if (datos.length === 0) {
-        setError("No encontramos esa dirección en OpenStreetMap. Prueba con calle, número y comuna.");
-      } else if (datos.length === 1) {
-        await elegirResultado(datos[0]);
-      } else {
-        setOpciones(datos);
-      }
-    } catch {
-      setError("No pudimos consultar OpenStreetMap. Revisa tu conexión e intenta de nuevo.");
-    } finally {
-      setCargando(null);
-    }
-  }
-
-  async function elegirResultado(r: ResultadoNominatim) {
-    setOpciones(null);
-    await consultarGrilla({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), etiqueta: r.display_name, address: r.address });
   }
 
   return (
@@ -132,40 +109,18 @@ export default function Direccion() {
         </div>
 
         <div className="border-t border-line pt-6">
-          <form onSubmit={buscarDireccion} className="space-y-2">
-            <label htmlFor="direccion" className="block text-sm font-medium">
-              O busca tu dirección
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="direccion"
-                value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
-                placeholder="Ej. Av. Libertad 1000, Viña del Mar"
-                autoComplete="off"
-                className="w-full rounded-sm border border-line px-4 py-3 text-base outline-none focus:border-link"
-              />
-              <button
-                type="submit"
-                disabled={cargando !== null}
-                className="shrink-0 rounded-sm border border-line px-4 py-2 text-sm hover:bg-tint disabled:opacity-60"
-              >
-                {cargando === "buscar" ? "Buscando…" : "Buscar"}
-              </button>
-            </div>
-          </form>
-          <p className="mt-2 text-sm text-muted">
-            La dirección se envía a OpenStreetMap para ubicarla. Límite Vivo no la guarda. Búsqueda de direcciones con
-            OpenStreetMap (Nominatim) ·{" "}
-            <a
-              href="https://www.openstreetmap.org/copyright"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-link underline"
-            >
-              © colaboradores de OpenStreetMap
-            </a>
-          </p>
+          <BuscadorDireccion
+            onElegir={(sug) =>
+              consultarGrilla({
+                lat: sug.lat,
+                lon: sug.lon,
+                etiqueta: sug.detalle ? `${sug.titulo}, ${sug.detalle}` : sug.titulo,
+                fuente: "busqueda",
+                exacto: sug.numeroExacto,
+                address: sug.address,
+              })
+            }
+          />
         </div>
 
         {error && (
@@ -174,34 +129,16 @@ export default function Direccion() {
           </p>
         )}
 
-        {opciones && opciones.length > 0 && (
-          <div>
-            <p className="mb-2 text-sm font-medium">Encontramos varias direcciones. Elige la correcta:</p>
-            <ul className="divide-y divide-line border border-line">
-              {opciones.map((o) => (
-                <li key={`${o.lat}-${o.lon}`}>
-                  <button
-                    type="button"
-                    onClick={() => elegirResultado(o)}
-                    className="block w-full px-4 py-2 text-left text-sm hover:bg-tint"
-                  >
-                    {o.display_name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </section>
 
       {ubicacion && resultado && (
         <section ref={resultadoRef} aria-live="polite"
           className="max-w-3xl scroll-mt-4 space-y-4 border-t border-ink pt-8">
           <p className="text-sm text-muted">{ubicacion.etiqueta}</p>
-          {ubicacion.address && !ubicacion.address.house_number && (
+          {ubicacion.fuente === "busqueda" && !ubicacion.exacto && (
             <p className="text-sm">
-              OpenStreetMap no tiene registrado el número de esta dirección, así que se usa un punto de la calle. La distancia
-              real a tu casa puede variar en algunos cientos de metros.
+              No tenemos el número exacto de esta dirección, así que el punto quedó en algún lugar de la calle. Si no está en
+              tu casa, ajústalo en el mapa más abajo.
             </p>
           )}
           {resultado === "fuera" ? (
@@ -227,8 +164,34 @@ export default function Direccion() {
               )}
             </div>
           ) : (
-            <Resultado celda={resultado} comunaNombre={comunaNombre} lat={ubicacion.lat} lon={ubicacion.lon} porBusqueda={Boolean(ubicacion.address)} />
+            <Resultado celda={resultado} comunaNombre={comunaNombre} lat={ubicacion.lat} lon={ubicacion.lon} fuente={ubicacion.fuente} />
           )}
+          <div className="space-y-3 border-t border-line pt-6">
+            {mapaInicio ? (
+              <>
+                <p className="text-sm">Arrastra el marcador o haz clic donde está tu casa. El resultado de arriba se recalcula al instante.</p>
+                <MapaAjuste
+                  lat={mapaInicio.lat}
+                  lon={mapaInicio.lon}
+                  onMover={(lat, lon) => consultarGrilla({ lat, lon, etiqueta: "Punto ajustado en el mapa", fuente: "mapa" })}
+                />
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setMapaInicio({ lat: ubicacion.lat, lon: ubicacion.lon })}
+                  className="rounded-sm border border-line px-4 py-2 text-sm hover:bg-tint"
+                >
+                  Ajustar el punto en el mapa
+                </button>
+                <p className="text-sm text-muted">
+                  Si el punto no quedó en tu casa, puedes moverlo. El mapa se carga desde OpenStreetMap, que verá la zona que
+                  estás mirando.
+                </p>
+              </>
+            )}
+          </div>
         </section>
       )}
 
@@ -292,13 +255,13 @@ function Resultado({
   comunaNombre,
   lat,
   lon,
-  porBusqueda,
+  fuente,
 }: {
   celda: ResultadoCelda;
   comunaNombre: string | null;
   lat: number;
   lon: number;
-  porBusqueda: boolean;
+  fuente: Fuente;
 }) {
   const d = celda.distanciaM;
   const lejos = d >= celda.topeM;
@@ -342,9 +305,11 @@ function Resultado({
             anterior a los incendios de 2023 y 2024. Una plantación cortada, quemada o plantada después puede no aparecer.
           </li>
           <li>
-            {porBusqueda
+            {fuente === "busqueda"
               ? "La ubicación de una dirección buscada por texto es aproximada, y el cálculo se hace por celdas de unos 100 m."
-              : "La ubicación del navegador puede tener un error de algunas decenas de metros, y el cálculo se hace por celdas de unos 100 m."}
+              : fuente === "mapa"
+                ? "El cálculo se hace por celdas de unos 100 m, así que un punto movido unos metros puede dar el mismo resultado."
+                : "La ubicación del navegador puede tener un error de algunas decenas de metros, y el cálculo se hace por celdas de unos 100 m."}
           </li>
           {celda.quema === null && <li>MapBiomas Fuego cubre de la Región de Valparaíso a la de La Araucanía.</li>}
         </ul>

@@ -73,23 +73,32 @@ def dibujar(args):
     ax.imshow(img, extent=ext, interpolation="nearest")
     gpd.GeoSeries([geom]).boundary.plot(ax=ax, color="#1b1f1d", lw=0.9)
     # Marcadores numerados de los 10 sectores con más plantación a menos de 100 m (mismo orden que la ficha)
-    for sct in json.load(open(f"web/public/datos/comunas/{slug}.json"))["sectores"][:10]:
+    marcados = json.load(open(f"web/public/datos/comunas/{slug}.json"))["sectores"][:10]
+    for sct in marcados:
         ax.plot(sct["lon"], sct["lat"], "o", ms=15, mfc="#16181a", mec="white", mew=1.5, zorder=5)
         ax.text(sct["lon"], sct["lat"], str(sct["n"]), color="white", fontsize=8, fontweight="bold",
                 ha="center", va="center", zorder=6)
     ax.set_xlim(ext[0], ext[1]); ax.set_ylim(ext[2], ext[3])
     ax.set_aspect(1 / math.cos(math.radians(lat)))
     ax.axis("off")
+    # Posición de cada marcador en la imagen final (en % del ancho y alto), para hacerlos clicables en la web
+    fig.canvas.draw()
+    ancho_px, alto_px = fig.canvas.get_width_height()
+    marcas = {}
+    for sct in marcados:
+        x, y = ax.transData.transform((sct["lon"], sct["lat"]))
+        marcas[sct["n"]] = [round(x / ancho_px * 100, 2), round((1 - y / alto_px) * 100, 2)]
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=110, facecolor="white")
     Image.open(buf).convert("RGB").save(f"{OUT}/{slug}.webp", "WEBP", quality=82, method=6)  # luego se convierte a WebP
     plt.close(fig)
-    return slug
+    return slug, marcas
 
 
 if __name__ == "__main__":
     import os
     os.makedirs(OUT, exist_ok=True)
     with Pool(6) as p:
-        hechos = [s for s in p.imap_unordered(dibujar, filas) if s]
+        hechos = [r for r in p.imap_unordered(dibujar, filas) if r]
+    json.dump({slug: marcas for slug, marcas in hechos}, open("out/mapas_marcas.json", "w"))
     print(len(hechos), "mapas")

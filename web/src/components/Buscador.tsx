@@ -75,6 +75,7 @@ export default function Buscador({ comunas }: { comunas: Item[] }) {
           {resultados.map((c, i) => (
             <li key={c.slug} id={`buscar-op-${i}`} role="option" aria-selected={i === sel}>
               <Link
+                prefetch={false}
                 href={`/comuna/${c.slug}/`}
                 onMouseEnter={() => setSel(i)}
                 className={`flex justify-between gap-3 px-4 py-2 hover:bg-tint ${i === sel ? "bg-tint" : ""}`}
