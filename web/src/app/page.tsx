@@ -2,6 +2,7 @@ import Link from "next/link";
 import Buscador from "@/components/Buscador";
 import MapaComunas from "@/components/MapaComunas";
 import { filasBuscador, filasLivianas, mapa, resumen } from "@/lib/datos";
+import { VISOR_CONAF } from "@/lib/enlaces";
 import { ha, pct } from "@/lib/formato";
 
 const nf2 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -44,7 +45,27 @@ export default function Inicio() {
           el matorral y el pastizal de esa misma franja, según la colección de MapBiomas que se use.
         </p>
         <p>
+          Son cifras para discutir con datos las franjas de protección entre plantaciones y viviendas: cuánta plantación
+          quedaría dentro de 100, 200 o 500 m en cada comuna, y cómo ha cambiado desde el año 2000.
+        </p>
+        <p>
           <Link href="/hallazgos/" className="text-link underline">Ver los hallazgos completos</Link>
+        </p>
+      </section>
+
+      <section aria-labelledby="aporte" className="max-w-3xl space-y-3">
+        <h2 id="aporte" className="text-2xl font-semibold tracking-tight">Qué agrega Límite Vivo</h2>
+        <p>
+          CONAF publica el mapa oficial de riesgo de incendio en las zonas de interfaz entre ciudades y vegetación, y es la
+          referencia para conocer el riesgo de un lugar. Límite Vivo lo complementa con algo que ese análisis no entrega por
+          separado. Distingue la plantación forestal del bosque nativo y el matorral, compara su extensión en 2000, 2022 y 2024
+          con los mapas de MapBiomas, la contrasta con lo que se quemó entre 2023 y 2025, y deja los datos y el código abiertos
+          para revisarlos.
+        </p>
+        <p>
+          <a href={VISOR_CONAF} target="_blank" rel="noopener noreferrer" className="text-link underline">
+            Visor de zonas de interfaz de CONAF
+          </a>
         </p>
       </section>
 

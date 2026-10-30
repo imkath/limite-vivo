@@ -4,6 +4,7 @@ import { CITAS, comuna, resumen, vecinas, type FilaResumen, type Franja, type Fu
 import { ha, haSigno, pct, tasa } from "@/lib/formato";
 import Sectores from "@/components/Sectores";
 import DescargaCsv from "@/components/DescargaCsv";
+import { VISOR_CONAF } from "@/lib/enlaces";
 import { nombreSector } from "@/lib/sectores";
 
 export const dynamicParams = false;
@@ -295,6 +296,11 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
                 : ""}{" "}
               También sirve al revisar el Plan Regulador Comunal y al evaluar dónde crece la ciudad, y se puede actualizar con
               cada nueva colección de MapBiomas.
+            </p>
+            <p>
+              Para el riesgo oficial de incendio en las zonas de interfaz de la comuna, revisa el{" "}
+              <a href={VISOR_CONAF} target="_blank" rel="noopener noreferrer" className="text-link underline">visor de CONAF</a>.
+              Límite Vivo lo complementa con la plantación forestal separada del resto de la vegetación.
             </p>
           </section>
         </>

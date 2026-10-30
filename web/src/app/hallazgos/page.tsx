@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { nombreSector } from "@/lib/sectores";
+import { VISOR_CONAF } from "@/lib/enlaces";
 import { resumen } from "@/lib/datos";
 import { ha, pctSigno } from "@/lib/formato";
 
@@ -32,7 +33,10 @@ export default function Hallazgos() {
         <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">Hallazgos</h1>
         <p className="text-lg text-muted">
           Lo que muestran los mapas de MapBiomas Chile sobre la plantación forestal que llega hasta el borde de las zonas
-          pobladas. El detalle del cálculo y sus límites está en la{" "}
+          pobladas, separada del bosque nativo y el matorral. Sirve para discutir con cifras las franjas de protección entre
+          plantaciones y viviendas, y complementa el{" "}
+          <a href={VISOR_CONAF} target="_blank" rel="noopener noreferrer" className="text-link underline">mapa de riesgo de CONAF</a>.
+          El detalle del cálculo y sus límites está en la{" "}
           <Link href="/metodologia/" className="text-link underline">metodología</Link>.
         </p>
       </header>
@@ -42,7 +46,9 @@ export default function Hallazgos() {
         <p className="max-w-3xl">
           En 2022 había {ha(c1["2022"].plantacion_500m_ha)} de plantación forestal a menos de 500 m de una zona poblada,
           repartidas en {conFranja} comunas. De esas, {ha(c1["2022"].plantacion_100m_ha)} estaban a menos de 100 m, más o menos
-          una cuadra.
+          una cuadra. Dicho de otro modo, una franja de protección de 100 m alrededor de las zonas pobladas abarcaría hoy{" "}
+          {ha(c1["2022"].plantacion_100m_ha)} de plantación, y una de 500 m, {ha(c1["2022"].plantacion_500m_ha)}. La ficha de cada
+          comuna da la cifra local.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] max-w-3xl text-sm">

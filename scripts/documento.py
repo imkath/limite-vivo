@@ -195,11 +195,14 @@ p(
     "MapBiomas Fuego, sus autores informaron que cerca del 30 % de los incendios afectó áreas próximas a ciudades."
 )
 p(
-    "Existen también mapas nacionales de interfaz urbano-forestal, como el análisis nacional de riesgo y zonas de interfaz de CONAF "
-    "(2021, actualizado en 2024), Schug et al. (2023) y Gelabert et al. (2026). En nuestra revisión no encontramos un indicador "
+    "Existen también mapas nacionales de interfaz urbano-forestal. El más cercano es el análisis nacional de riesgo y zonas de "
+    "interfaz de CONAF (2021, actualizado en 2024), de 10 m de resolución y con un visor público, que es la referencia oficial "
+    "para conocer el riesgo de un lugar. Según su descripción, no separa la plantación forestal de la vegetación nativa ni "
+    "compara años. Hay además mapas de interfaz para todo el país en Schug et al. (2023) y Gelabert et al. (2026). En nuestra revisión no encontramos un indicador "
     "que, para cada comuna y con las series de MapBiomas, cuantifique la plantación forestal a distancias fijas de las zonas "
     "pobladas, la siga desde el año 2000 y la contraste con el área quemada dentro de la misma comuna y franja. Límite Vivo se "
-    "propone como complemento de esos trabajos."
+    "propone como complemento de esos trabajos, en particular del análisis de CONAF, y lo enlaza desde cada ficha comunal y "
+    "desde la búsqueda por dirección."
 )
 
 doc.add_heading("3. Objetivo", 1)
@@ -245,6 +248,11 @@ tabla(
         ("plantacion_100m_ha", "A menos de 100 m"), ("plantacion_200m_ha", "A menos de 200 m"), ("plantacion_500m_ha", "A menos de 500 m"))],
 )
 p("Hectáreas de plantación forestal. C1 y C2: Colecciones 1 y 2 de MapBiomas Chile.", size=8.5, color="55595E")
+p(
+    f"Leídas como franjas de protección, una franja de 100 m alrededor de las zonas pobladas abarcaría hoy "
+    f"{n0(c1['2022']['plantacion_100m_ha'])} ha de plantación y una de 500 m, {n0(c1['2022']['plantacion_500m_ha'])} ha (Colección 1, "
+    f"2022). La herramienta entrega esa cifra para cada comuna, lo que permite estimar cuánta plantación quedaría dentro de una norma de distancia en cada lugar."
+)
 top = [c for c in r["comunas"] if c["puesto"]][:15]
 p(f"Las 15 comunas con más plantación a menos de 500 m de zonas pobladas en 2022 (Colección 1):")
 tabla(
@@ -288,7 +296,8 @@ doc.add_heading("9. La herramienta", 1)
 lista([
     "Inicio con las cifras nacionales, el contraste con incendios, un mapa clicable de las comunas de Valparaíso a Los Lagos, los 25 sectores con más plantación junto a zonas pobladas y un ranking filtrable por región.",
     "Una ficha por comuna (343) con mapa, sectores numerados con enlace a OpenStreetMap, comunas vecinas, tabla por distancia en ambas colecciones, indicación de si las colecciones coinciden en la tendencia, contraste con incendios cuando hay cobertura de Fuego y usos para el municipio.",
-    "Búsqueda por dirección o con la ubicación del navegador, que muestra a cuántos metros está la plantación más cercana, cuántas hectáreas hay en 500 m y si hubo área quemada cerca entre 2023 y 2025. La ubicación del navegador no se envía a ningún servicio externo.",
+    "Búsqueda por dirección con sugerencias mientras se escribe (Photon, datos de OpenStreetMap) o con la ubicación del navegador, y un mapa opcional para ajustar el punto cuando OpenStreetMap no tiene el número de la casa. Muestra a cuántos metros está la plantación más cercana, cuántas hectáreas hay en 500 m y si hubo área quemada cerca entre 2023 y 2025. La ubicación del navegador no se envía a ningún servicio externo.",
+    "Enlace al visor oficial de riesgo de CONAF desde cada ficha y desde la búsqueda por dirección.",
     "Metodología completa con antecedentes, control de calidad y limitaciones.",
     "Datos descargables en CSV y código abierto en Python (rasterio, numpy, scipy, geopandas) y en la web (Next.js, exportación estática).",
 ])
@@ -326,7 +335,7 @@ refs = [
     "Jaque Castillo, E., Fernández, A., Fuentes Robles, R. y Ojeda, C. G. (2021). Data-based wildfire risk model for Mediterranean ecosystems - case study of the Concepción metropolitan area in central Chile. Natural Hazards and Earth System Sciences 21, 3663-3678. https://doi.org/10.5194/nhess-21-3663-2021",
     "McWethy, D. B., Pauchard, A., García, R. A., Holz, A., González, M. E., et al. (2018). Landscape drivers of recent fire activity (2001-2017) in south-central Chile. PLOS ONE 13(8), e0201195. https://doi.org/10.1371/journal.pone.0201195",
     "Schug, F., Bar-Massada, A., Carlson, A. R., Cox, H., et al. (2023). The global wildland-urban interface. Nature 621, 94-99. https://doi.org/10.1038/s41586-023-06320-0",
-    "CONAF (2024). Análisis Nacional de Riesgo de Incendios Forestales y Zonas de Interfaz. https://www.conaf.cl/incendios/analisis-nacional-de-riesgo-de-incendios-forestales/",
+    "CONAF (2024). Análisis Nacional de Riesgo de Incendios Forestales y Zonas de Interfaz. https://www.conaf.cl/incendios/analisis-nacional-de-riesgo-de-incendios-forestales/ Visor: https://geprif.maps.arcgis.com/apps/dashboards/09532374973a495bb185fcbe55711cd3",
     "Universidad de Chile (2026). MapBiomas Fuego revela 1,2 millones de hectáreas quemadas en 13 años. https://uchile.cl/noticias/244116/mapbiomas-fuego-revela-12-millones-de-hectareas-quemadas-en-13-anos",
     "Corporación Ciudades, con datos de SENAPRED al 6-7-2026, citado en G5 Noticias (10-8-2026). https://g5noticias.cl/2026/08/10/a-cinco-anos-de-la-nueva-institucionalidad-un-40%de-las-comunas-de-chile-siguen-sin-un-plan-formalizado-para-reducir-el-riesgo-de-desastres/",
     "Ley 21.364 (2021), artículo 28. Biblioteca del Congreso Nacional de Chile.",

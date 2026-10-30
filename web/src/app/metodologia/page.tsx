@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import DescargaCsv from "@/components/DescargaCsv";
+import { VISOR_CONAF } from "@/lib/enlaces";
 import { CITAS, resumen } from "@/lib/datos";
 import { ha } from "@/lib/formato";
 
@@ -46,7 +47,9 @@ export default function Metodologia() {
         <p>
           También existen mapas nacionales de interfaz urbano-forestal. CONAF publica un{" "}
           <A href="https://www.conaf.cl/incendios/analisis-nacional-de-riesgo-de-incendios-forestales/">análisis nacional de riesgo y
-          zonas de interfaz</A> (2021, actualizado en 2024), y hay mapas de interfaz para todo el país en Schug et al.
+          zonas de interfaz</A> (2021, actualizado en 2024), con resolución de 10 m y un{" "}
+          <A href={VISOR_CONAF}>visor público</A> de riesgo en las zonas de interfaz. Según su descripción, no separa la
+          plantación forestal de la vegetación nativa ni compara años. Hay además mapas de interfaz para todo el país en Schug et al.
           (<A href="https://doi.org/10.1038/s41586-023-06320-0">2023</A>) y Gelabert et al.
           (<A href="https://doi.org/10.17398/3101-7177.2.133">2026</A>).
         </p>
@@ -122,7 +125,10 @@ export default function Metodologia() {
             Búsqueda por dirección. Las zonas pobladas y un margen de 200 m se dividen en celdas de 0,001° (unos 100 m). Para cada
             celda se guarda la distancia hasta el borde de la plantación más cercana (con tope de 3 km), las hectáreas de
             plantación en un radio de 500 m y si hubo área quemada a menos de 500 m entre 2023 y 2025. La dirección se ubica con
-            Nominatim de OpenStreetMap, o con la ubicación del navegador, que no se envía a ningún servicio externo.
+            sugerencias del buscador Photon, que usa datos de OpenStreetMap (lo escrito se envía a ese servicio), o con la
+            ubicación del navegador, que no se envía a ningún servicio externo. Como OpenStreetMap no tiene el número de muchas
+            casas en Chile, la persona puede ajustar el punto en un mapa opcional, que carga sus imágenes desde OpenStreetMap
+            solo si se abre.
           </li>
         </ol>
       </section>

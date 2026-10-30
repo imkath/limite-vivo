@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import BuscadorDireccion from "@/components/BuscadorDireccion";
+import { VISOR_CONAF } from "@/lib/enlaces";
 import { buscarCelda, comunaDesdeDireccion, nombreComuna, type ResultadoCelda } from "@/lib/grilla";
 
 // Leaflet necesita el navegador; se descarga solo si la persona abre el mapa
@@ -298,7 +299,8 @@ function Resultado({
         <ul className="list-disc space-y-1 pl-5">
           <li>
             Esto mide distancia, no riesgo de incendio. Que haya plantación cerca no significa que ese lugar se vaya a quemar, ni
-            que esté a salvo si no la hay.
+            que esté a salvo si no la hay. Para el riesgo oficial, revisa el{" "}
+            <a href={VISOR_CONAF} target="_blank" rel="noopener noreferrer" className="text-link underline">visor de CONAF</a>.
           </li>
           <li>
             Los mapas son de 2022 (MapBiomas Chile, Colección 1), la versión que calza con las estadísticas oficiales y es
