@@ -20,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="text-base font-semibold tracking-tight text-ink">Límite Vivo</Link>
             <div className="flex gap-5 text-sm">
               <Link href="/#comunas" className="text-ink hover:text-link">Comunas</Link>
+              <Link href="/direccion/" className="text-ink hover:text-link">Tu dirección</Link>
               <Link href="/metodologia/" className="text-ink hover:text-link">Metodología</Link>
               <a href="/datos/limite-vivo-comunas.csv" download className="text-ink hover:text-link">Datos (CSV)</a>
             </div>
