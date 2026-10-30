@@ -1,0 +1,14 @@
+# Datos de entrada pesados (se descargan con los scripts) y entorno local
+data/
+geo/
+out/
+eehome/
+*.log
+__pycache__/
+.playwright-mcp/
+# Web
+web/node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+.DS_Store

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #ffffff;
+  --ink: #16181a;
+  --muted: #55595e;
+  --line: #d9dbdd;
+  --link: #1f4e8c;
+  --tint: #f3f4f5;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-link: var(--link);
+  --color-tint: var(--tint);
+  --font-sans: var(--font-plex);
+  --radius-sm: 2px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-plex), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+a, button, select, summary, [role="button"] { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { font-size: 11pt; }
+  a { color: inherit; text-decoration: none; }
+}
