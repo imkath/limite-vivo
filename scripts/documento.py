@@ -20,6 +20,18 @@ REVISION = sys.argv[4] if len(sys.argv) > 4 else ""
 D = "web/public/datos"
 r = json.load(open(f"{D}/resumen.json"))
 com = {c["slug"]: json.load(open(f"{D}/comunas/{c['slug']}.json")) for c in r["comunas"]}
+cr = r["crecimiento"]
+po = r["poblacion"]
+hist = r["sectores_historial"]
+
+
+def partes(o):
+    t = o["ya_estaba_ha"] + o["llego_ciudad_ha"] + o["plantacion_nueva_ha"]
+    return {k: o[k] / t * 100 for k in ("ya_estaba_ha", "llego_ciudad_ha", "plantacion_nueva_ha")}
+
+
+casos = [partes(cr[c][d]) for c in ("col1_2022", "col2_2022") for d in ("100m", "500m")]
+rango = lambda k: (min(x[k] for x in casos), max(x[k] for x in casos))
 c1, c2 = r["nacional"]["col1"], r["nacional"]["col2"]
 v1, v2 = r["validacion"]["col1"], r["validacion"]["col2"]
 sens = r["sensibilidad"]["col1"]
@@ -137,7 +149,7 @@ t = doc.add_paragraph()
 run = t.add_run("Límite Vivo")
 run.bold = True
 run.font.size = Pt(24)
-p("Plantaciones forestales en el borde de las ciudades de Chile, por comuna y por sector, 2000 a 2024", size=13)
+p("Plantaciones forestales en el borde de las ciudades de Chile: cuánta hay, quién se acercó a quién y quiénes viven al lado, por comuna y por sector, 2000 a 2024", size=13)
 p(f"Autoría: {AUTORIA}", size=10)
 p(f"Herramienta en línea: {WEB}", size=10)
 p(f"Código y datos: {REPO}", size=10)
@@ -145,9 +157,11 @@ p(f"Código y datos: {REPO}", size=10)
 doc.add_heading("Resumen", 1)
 p(
     f"Límite Vivo es una herramienta pública que calcula, para cada una de las 343 comunas de Chile, cuántas hectáreas de "
-    f"plantación forestal hay a menos de 100, 200 y 500 metros de una zona poblada, cómo cambió esa franja desde el año 2000 y "
-    f"qué pasó con ella en los incendios de 2023 a 2025. Todo el cálculo usa datos de MapBiomas Chile, en particular los mapas anuales de "
-    f"cobertura y uso del suelo de las Colecciones 1 y 2 y el área quemada de MapBiomas Fuego, Colección 1."
+    f"plantación forestal hay a menos de 100, 200 y 500 metros de una zona poblada, cómo cambió esa franja desde el año 2000, "
+    f"si cambió porque la ciudad creció hacia la plantación o porque se plantó junto a las casas, cuántas personas viven al lado "
+    f"y qué pasó con esa franja en los incendios. El cálculo se basa en los mapas anuales de cobertura y uso del suelo de "
+    f"MapBiomas Chile (Colecciones 1 y 2) y en MapBiomas Fuego (Colección 1); el Censo 2024 del INE se usa como complemento para "
+    f"contar a las personas."
 )
 p(
     f"En 2022 había {n0(c1['2022']['plantacion_500m_ha'])} ha de plantación a menos de 500 m de una zona poblada y "
@@ -163,11 +177,22 @@ p(
     f"({n2(v1['natural']['ic95'][0])} a {n2(v1['natural']['ic95'][1])}). Es una asociación observada en tres temporadas, no una "
     f"relación causal, y tiene excepciones como Viña del Mar en 2024."
 )
+lc1, lc2 = rango("llego_ciudad_ha"), rango("plantacion_nueva_ha")
+p(
+    f"La franja no creció por un solo motivo. De la plantación que en 2022 estaba a menos de 100 m de las casas, "
+    f"{n0(cr['col1_2022']['100m']['llego_ciudad_ha'])} ha ya existían en 2000 más lejos y fue la zona poblada la que creció hasta "
+    f"ellas, y {n0(cr['col1_2022']['100m']['plantacion_nueva_ha'])} ha se plantaron después de 2005 (Colección 1). Según la colección y "
+    f"la distancia, entre el {n1(lc1[0])} % y el {n1(lc1[1])} % de la plantación junto a las casas corresponde al crecimiento de la "
+    f"ciudad y entre el {n1(lc2[0])} % y el {n1(lc2[1])} % a plantación nueva. Con las manzanas del Censo 2024, entre "
+    f"{n0(po['centro']['100m'])} y {n0(po['100m']['personas'])} personas viven a menos de 100 m de plantación forestal, según si se "
+    f"mide desde el centro o desde el borde de su manzana."
+)
 p(
     f"Como una comuna puede tener la plantación concentrada en pocos bordes, el borde de cada zona poblada se divide además en "
     f"sectores de alrededor de 1 km. Hay {n0(n_sect)} sectores con plantación a menos de 100 m, cada uno con su ubicación y el nombre "
     f"del barrio, población o localidad más cercana según OpenStreetMap. "
-    "La herramienta entrega una ficha por comuna con mapa, sectores, cifras por distancia, evolución, contraste con incendios y usos "
+    f"Para cada sector se informa además cuánto de su franja de 100 m se quemó entre 2013 y 2025. "
+    "La herramienta entrega una ficha por comuna con mapa, sectores, cifras por distancia, evolución, origen de la franja, personas que viven al lado, contraste con incendios y usos "
     "posibles en el Plan Comunal para la Reducción del Riesgo de Desastres (Ley 21.364). Los datos se descargan en CSV y el "
     "código es público."
 )
@@ -198,26 +223,39 @@ p(
     "Existen también mapas nacionales de interfaz urbano-forestal. El más cercano es el análisis nacional de riesgo y zonas de "
     "interfaz de CONAF (2021, actualizado en 2024), de 10 m de resolución y con un visor público, que es la referencia oficial "
     "para conocer el riesgo de un lugar. Según su descripción, no separa la plantación forestal de la vegetación nativa ni "
-    "compara años. Hay además mapas de interfaz para todo el país en Schug et al. (2023) y Gelabert et al. (2026). En nuestra revisión no encontramos un indicador "
-    "que, para cada comuna y con las series de MapBiomas, cuantifique la plantación forestal a distancias fijas de las zonas "
-    "pobladas, la siga desde el año 2000 y la contraste con el área quemada dentro de la misma comuna y franja. Límite Vivo se "
-    "propone como complemento de esos trabajos, en particular del análisis de CONAF, y lo enlaza desde cada ficha comunal y "
-    "desde la búsqueda por dirección."
+    "compara años. Hay además mapas de interfaz para todo el país en Schug et al. (2023) y Gelabert et al. (2026)."
+)
+p(
+    "Sarricolea et al. (2020) estimaron que cerca de 3 millones de personas viven en la interfaz urbano-forestal entre "
+    "Valparaíso y La Araucanía, con resultados por región y considerando toda la vegetación inflamable. Hernández et al. (2024) "
+    "midieron con MapBiomas el crecimiento de la infraestructura urbana de Chile entre 2000 y 2022, por región. El Ministerio de "
+    "Educación (visor de comunidades educativas ante amenazas socionaturales) y SENAPRED (Visor Chile Preparado) ya muestran "
+    "colegios, jardines infantiles y centros de salud sobre la amenaza de incendio de CONAF, por lo que Límite Vivo no repite esa "
+    "capa."
+)
+p(
+    "En nuestra revisión no encontramos una herramienta pública que, para cada comuna y con las series de MapBiomas, cuantifique "
+    "la plantación forestal a distancias fijas de las zonas pobladas, la siga desde el año 2000, separe si fue la ciudad la que "
+    "llegó a la plantación o la plantación la que llegó a la ciudad, cuente a las personas que viven al lado y contraste todo con "
+    "el área quemada dentro de la misma comuna y franja. Límite Vivo se propone como complemento de esos trabajos, en particular "
+    "del análisis de CONAF, y lo enlaza desde cada ficha comunal y desde la búsqueda por dirección."
 )
 
 doc.add_heading("3. Objetivo", 1)
 p(
     "Entregar a municipios, organismos de emergencia y a la ciudadanía un indicador comunal, reproducible y actualizable con "
-    "cada colección de MapBiomas, de cuánta plantación forestal hay junto a las zonas pobladas, cómo ha cambiado y cómo se "
-    "comportó en los incendios recientes."
+    "cada colección de MapBiomas, de cuánta plantación forestal hay junto a las zonas pobladas, cómo ha cambiado, si ese cambio "
+    "viene del crecimiento urbano o de plantación nueva, cuántas personas viven al lado y cómo se comportó esa franja en los "
+    "incendios recientes."
 )
 
 doc.add_heading("4. Datos", 1)
 lista([
-    "MapBiomas Chile, cobertura y uso del suelo, Colección 1 (2000 y 2022). GeoTIFF anuales de 30 m del almacenamiento público. Base de las cifras principales.",
-    "MapBiomas Chile, cobertura y uso del suelo, Colección 2 (2000, 2022 y 2024), leída en Google Earth Engine y descargada en la misma grilla. Análisis de sensibilidad.",
-    "MapBiomas Fuego Chile, Colección 1, área quemada anual 2023, 2024 y 2025. Cubre de Valparaíso a La Araucanía.",
-    "Límites comunales de MapBiomas Chile (nivel político 4, 343 comunas) y estadísticas oficiales por comuna de ambas colecciones.",
+    "MapBiomas Chile, cobertura y uso del suelo, Colección 1 (2000 y 2022, y 2000 a 2005 para identificar la plantación existente). Base de las cifras principales. Se leyó del asset público en Google Earth Engine, en su grilla nativa de 30 m, y da exactamente las mismas cifras que los GeoTIFF anuales del almacenamiento público, que se usaron primero y que el 30 de octubre de 2026 dejaron de estar disponibles para descarga directa.",
+    "MapBiomas Chile, cobertura y uso del suelo, Colección 2 (2000 a 2005, 2022 y 2024), leída en Google Earth Engine y descargada en la misma grilla. Análisis de sensibilidad.",
+    "MapBiomas Fuego Chile, Colección 1: área quemada anual 2023, 2024 y 2025, y frecuencia de quema 2013-2025. Cubre de Valparaíso a La Araucanía.",
+    "Límites comunales de MapBiomas Chile (nivel político 4, 343 comunas), publicados como ráster en Earth Engine, vectorizados y nombrados por superposición con la capa oficial de comunas del MOP (servicio DPA); cada comuna coincide en más del 92 % de su superficie. Estadísticas oficiales por comuna de ambas colecciones.",
+    "Complemento: cartografía del Censo de Población y Vivienda 2024 (INE), manzanas urbanas y de aldeas con personas, viviendas ocupadas, grupos de edad y personas con mucha dificultad para caminar o subir escaleras.",
 ])
 
 doc.add_heading("5. Método", 1)
@@ -226,6 +264,9 @@ lista([
     "Distancia. Para cada píxel se calcula la distancia en metros hasta el borde de la zona poblada más cercana, con el tamaño real del píxel según la latitud. Se consideran zonas pobladas hasta cerca de 1 km fuera de la comuna.",
     "Franjas. Se suman las hectáreas de plantación forestal (código 9) dentro de la comuna a menos de 100, 200 y 500 m, con el área de cada píxel según su latitud.",
     "Sectores. Con la cobertura de 2022 se marca el borde de cada zona poblada que tiene plantación a menos de 100 m. Los tramos expuestos a menos de unos 90 m entre sí se unen y se cortan en celdas de 0,01° (cerca de 1 km). Cada píxel de plantación a menos de 100 m se asigna al punto de zona poblada más cercano para sumar las hectáreas de cada sector. El largo del borde es aproximado (se cuenta en píxeles). Cada sector toma el nombre del lugar más cercano de OpenStreetMap (barrio, población, villa o localidad); si está a más de 500 m se indica la distancia y si está a más de 2 km se omite el nombre.",
+    "Quién se acercó a quién. La plantación que en 2022 está a menos de 100 o 500 m de una zona poblada se separa, píxel a píxel, en tres partes que suman exacto: la que ya estaba junto a las casas en 2000; la que existía pero más lejos y quedó cerca porque la zona poblada creció hasta ella; y la que se plantó después. Una plantación se considera existente si aparece como plantación en algún año entre 2000 y 2005, para no contar la cosecha y la replantación como plantación nueva. Se calcula con ambas colecciones.",
+    "Personas. Cada manzana del Censo 2024 se lleva a la grilla de MapBiomas y se mide su distancia mínima al borde de la plantación de 2022. Si alguna parte de la manzana está dentro de la distancia, cuentan todas sus personas (criterio amplio); como control se cuenta también la manzana solo si su punto interior está dentro (criterio estricto), y se informa el rango.",
+    "Historial de quema por sector. Para la franja de 100 m junto a cada sector, cualquiera sea su cobertura, se suma la superficie quemada al menos una vez entre 2013 y 2025 y la quemada dos o más veces, con la frecuencia de quema de MapBiomas Fuego.",
     "Contraste con incendios. Con la cobertura de 2022 y el área quemada 2023 a 2025, se compara dentro de cada comuna (para no mezclar lugares con distinto clima, relieve e incendios) la proporción quemada de la plantación de la franja de 500 m con la de la vegetación natural y la agricultura de la misma franja. Las comunas se combinan con la razón de Mantel-Haenszel y el intervalo de confianza de 95 % se obtiene con 2.000 remuestreos de comunas. Entran las comunas con al menos 20 ha de plantación en la franja y 10 ha quemadas en ella.",
 ])
 
@@ -236,11 +277,11 @@ lista([
     "Las franjas de seis comunas se recalcularon con un método independiente (polígonos, buffer en UTM y área elipsoidal). Las diferencias fueron menores a 1 % en la franja de 500 m y a 3 % en la de 200 m, y llegaron a 9 % en la de 100 m.",
     f"La suma de la plantación de los {n0(n_sect)} sectores ({n0(suma_sect)} ha) difiere en {n1(abs(suma_sect / c1['2022']['plantacion_100m_ha'] - 1) * 100)} % de la cifra nacional a menos de 100 m. Ninguna comuna con 5 ha o más a esa distancia queda sin sectores, y su ubicación se revisó en mapas de control.",
     "En la búsqueda por dirección, la distancia de 12 celdas al azar se recalculó directamente sobre el ráster, con una diferencia máxima de 2 m.",
-    "Hay pruebas automáticas del filtro de zonas pobladas y del cálculo de Mantel-Haenszel, y las comunas sin plantación dan cero.",
+    "Hay pruebas automáticas del filtro de zonas pobladas, del cálculo de Mantel-Haenszel, de la descomposición por origen (que las partes sumen exacto y que un rodal replantado no cuente como nuevo) y del conteo de personas, y las comunas sin plantación dan cero.",
+    "En cada comuna, las tres partes del origen suman exactamente la franja del cálculo principal. Todas las manzanas del censo quedaron medidas; solo faltan Juan Fernández e Isla de Pascua, que no están entre las 343 comunas de MapBiomas. En los sectores, la superficie quemada entre 2013 y 2025 nunca es menor que la plantación quemada entre 2023 y 2025 de la misma franja.",
     "El control encontró dos errores, que se corrigieron antes de entregar. Los mapas de control mostraron que la infraestructura incluía carreteras, y la verificación independiente mostró que la primera versión medía la distancia de centro a centro de píxel, lo que subestimaba la franja de 100 m en cerca de 15 %.",
 ])
 
-doc.add_page_break()
 doc.add_heading("7. Resultados nacionales", 1)
 tabla(
     ["Distancia a zonas pobladas", "2000 (C1)", "2022 (C1)", "2000 (C2)", "2024 (C2)"],
@@ -264,6 +305,51 @@ p("Los 10 sectores del país con más plantación forestal a menos de 100 m de u
 tabla(
     ["Sector", "Comuna", "Plantación a menos de 100 m (ha)", "Borde expuesto aprox. (m)"],
     [[nombre_sector(x), f"{x['comuna']} (sector {x['n']})", n0(x["plantacion_100m_ha"]), n0(math.floor(x["borde_m"] / 10 + 0.5) * 10)] for x in top_sect[:10]],
+)
+
+doc.add_heading("Quién se acercó a quién", 2)
+p(
+    "La plantación que hoy está junto a las casas tiene tres orígenes, que se resuelven en lugares distintos. La que ya existía y "
+    "a la que llegó la ciudad depende del Plan Regulador Comunal y de los permisos de loteo; la plantación nueva junto a las casas "
+    "depende de dónde se planta y de las franjas que se exijan a los predios forestales."
+)
+tabla(
+    ["Caso", "Ya estaba (ha)", "Llegó la ciudad (ha)", "Plantación nueva (ha)"],
+    [[t, n0(cr[c][d]["ya_estaba_ha"]), n0(cr[c][d]["llego_ciudad_ha"]), n0(cr[c][d]["plantacion_nueva_ha"])] for t, c, d in (
+        ("C1, 2000-2022, a menos de 100 m", "col1_2022", "100m"), ("C1, 2000-2022, a menos de 500 m", "col1_2022", "500m"),
+        ("C2, 2000-2022, a menos de 100 m", "col2_2022", "100m"), ("C2, 2000-2022, a menos de 500 m", "col2_2022", "500m"),
+        ("C2, 2000-2024, a menos de 100 m", "col2_2024", "100m"))],
+)
+p(
+    f"Las colecciones no dan las mismas proporciones: el crecimiento de la ciudad explica entre el {n1(lc1[0])} % y el {n1(lc1[1])} % "
+    f"y la plantación nueva entre el {n1(lc2[0])} % y el {n1(lc2[1])} %. Ambos caminos pesan en las dos colecciones, y la ficha de cada "
+    f"comuna indica cuál domina en ella. Por ejemplo, en Tomé "
+    f"{n0(com['tome']['crecimiento']['100m']['llego_ciudad_ha'])} de sus {n0(com['tome']['crecimiento']['100m']['final_ha'])} ha a menos de "
+    f"100 m corresponden a plantación que ya existía y a la que llegó la ciudad."
+)
+
+doc.add_heading("Personas que viven al lado", 2)
+p(
+    f"Según las manzanas del Censo 2024, entre {n0(po['centro']['100m'])} y {n0(po['100m']['personas'])} personas viven a menos de "
+    f"100 m de plantación forestal (criterio estricto y amplio) y entre {n0(po['centro']['500m'])} y {n0(po['500m']['personas'])} a "
+    f"menos de 500 m. En las manzanas que llegan a menos de 100 m hay {n0(po['100m']['viviendas'])} viviendas ocupadas, "
+    f"{n0(po['100m']['ninos_0_13'])} niñas y niños de 0 a 13 años, {n0(po['100m']['mayores_60'])} personas de 60 años o más y "
+    f"{n0(po['100m']['dificultad_mover'])} personas que no pueden caminar o subir escaleras, o lo hacen con mucha dificultad, un dato "
+    f"directo para los planes de evacuación. A diferencia de Sarricolea et al. (2020), la cifra considera solo plantación forestal, "
+    f"cubre todo el país y se entrega por comuna."
+)
+tabla(
+    ["Comuna", "Región", "Manzanas a menos de 100 m (personas)", "A menos de 500 m", "Parte de quienes viven en manzanas"],
+    [[x["comuna"], x["region"], n0(x["personas"]), n0(x["personas_500m"]), f"{n1(x['personas'] / x['personas_total'] * 100)} %"]
+     for x in r["top_personas"][:10]],
+)
+p("Las 10 comunas con más personas en manzanas que llegan a menos de 100 m de plantación (criterio amplio).", size=8.5, color="55595E")
+
+doc.add_heading("Historial de quema de los sectores", 2)
+p(
+    f"De {n0(hist['con_dato'])} sectores con datos de MapBiomas Fuego, {n0(hist['quemados'])} tuvieron al menos media hectárea de su "
+    f"franja de 100 m quemada entre 2013 y 2025 y {n0(hist['reincidentes'])} tuvieron media hectárea o más quemada dos o más veces. "
+    f"La ficha de cada comuna muestra el dato sector por sector."
 )
 
 doc.add_heading("8. Contraste con los incendios de 2023 a 2025", 1)
@@ -295,7 +381,7 @@ imagen("tome", 9.5, "Tomé. Rojo: zona poblada. Naranjo: plantación a menos de 
 doc.add_heading("9. La herramienta", 1)
 lista([
     "Inicio con las cifras nacionales, el contraste con incendios, un mapa clicable de las comunas de Valparaíso a Los Lagos, los 25 sectores con más plantación junto a zonas pobladas y un ranking filtrable por región.",
-    "Una ficha por comuna (343) con mapa, sectores numerados con enlace a OpenStreetMap, comunas vecinas, tabla por distancia en ambas colecciones, indicación de si las colecciones coinciden en la tendencia, contraste con incendios cuando hay cobertura de Fuego y usos para el municipio.",
+    "Una ficha por comuna (343) con mapa, sectores numerados con enlace a OpenStreetMap y su historial de quema 2013-2025, comunas vecinas, tabla por distancia en ambas colecciones, indicación de si las colecciones coinciden en la tendencia, origen de la franja (quién se acercó a quién), personas que viven al lado según el Censo 2024, contraste con incendios cuando hay cobertura de Fuego y usos para el municipio.",
     "Búsqueda por dirección con sugerencias mientras se escribe (Photon, datos de OpenStreetMap) o con la ubicación del navegador, y un mapa opcional para ajustar el punto cuando OpenStreetMap no tiene el número de la casa. Muestra a cuántos metros está la plantación más cercana, cuántas hectáreas hay en 500 m y si hubo área quemada cerca entre 2023 y 2025. La ubicación del navegador no se envía a ningún servicio externo.",
     "Enlace al visor oficial de riesgo de CONAF desde cada ficha y desde la búsqueda por dirección.",
     "Metodología completa con antecedentes, control de calidad y limitaciones.",
@@ -306,7 +392,9 @@ doc.add_heading("10. Impacto potencial", 1)
 p(
     "Un municipio puede incorporar la ficha como antecedente de amenaza de incendio forestal en su Plan Comunal para la "
     "Reducción del Riesgo de Desastres, priorizar cortafuegos, limpieza de bordes y rutas de evacuación donde la plantación está "
-    "a menos de 100 m de las casas, y usar la cifra al revisar el Plan Regulador Comunal. Los organismos de emergencia ganan una "
+    "a menos de 100 m de las casas, saber cuántas personas mayores, niños y personas con dificultad para moverse viven en esas "
+    "manzanas al planificar evacuaciones, y usar la cifra al revisar el Plan Regulador Comunal sabiendo cuánto de la franja viene "
+    "del crecimiento de la propia ciudad. Los organismos de emergencia ganan una "
     "vista nacional comparable. Si se aprueba una ley con zonas de amortiguación, la herramienta permite estimar cuánta plantación "
     "queda dentro de franjas de 100, 200 o 500 m en cada comuna. Y las organizaciones vecinales y la prensa tienen un dato verificable de su propia comuna. "
     "Como se apoya solo en datos abiertos de MapBiomas, se puede actualizar con cada nueva colección. La temporada de incendios "
@@ -320,6 +408,8 @@ lista([
     "Depende de la clasificación de MapBiomas; las colecciones difieren sobre todo en infraestructura, lo que cambia la magnitud de la tendencia.",
     "Con píxeles de 30 m, la franja de 100 m tiene una incertidumbre de método de hasta 10 %. No incluye casas aisladas ni zonas pobladas de menos de 2 ha.",
     "El contraste con incendios cubre tres temporadas y solo de Valparaíso a La Araucanía, y muestra asociación, no causalidad.",
+    "El origen de la franja depende de que la clasificación de zonas pobladas y plantación sea comparable entre años; como las colecciones dan proporciones distintas, se informa un rango.",
+    "Las personas son las de manzanas urbanas y de aldeas (89 % de la población): quedan fuera las viviendas rurales dispersas. El censo es de 2024 y la plantación de 2022, y el criterio amplio cuenta la manzana completa aunque solo una parte esté dentro de la distancia, por eso se da el rango con el criterio estricto.",
     "La revisión de trabajos previos no fue exhaustiva.",
 ])
 
@@ -333,12 +423,16 @@ refs = [
     "Hernández, H. J., González, V., Cortés, L., Hormazábal, C., Muñoz, et al. (2024). Assessing Chile's national expansion of urban and artificial coverages between 2000 and 2022. ISPRS Archives XLVIII-3-2024. https://doi.org/10.5194/isprs-archives-XLVIII-3-2024-643-2024",
     "Hora, B., González-Mathiesen, C., Aravena-Solís, N. y Tapia, T. (2025). Land Cover and Wildfire Risk: A Multi-Buffer Spatial Analysis of the Relationship Between Housing Destruction and Land Cover in Chile's Bío-Bío Region in 2023. Sustainability 17(10), 4416. https://doi.org/10.3390/su17104416",
     "Jaque Castillo, E., Fernández, A., Fuentes Robles, R. y Ojeda, C. G. (2021). Data-based wildfire risk model for Mediterranean ecosystems - case study of the Concepción metropolitan area in central Chile. Natural Hazards and Earth System Sciences 21, 3663-3678. https://doi.org/10.5194/nhess-21-3663-2021",
+    "INE (2025). Censo de Población y Vivienda 2024, cartografía censal (manzanas) y diccionario de variables. https://censo2024.ine.gob.cl/resultados/",
+    "Ministerio de Educación (2026). Visor comunidades educativas ante amenazas socionaturales. https://emergenciaydesastres.mineduc.cl/visor-comunidades-educativas-ante-amenazas-socionaturales/",
     "McWethy, D. B., Pauchard, A., García, R. A., Holz, A., González, M. E., et al. (2018). Landscape drivers of recent fire activity (2001-2017) in south-central Chile. PLOS ONE 13(8), e0201195. https://doi.org/10.1371/journal.pone.0201195",
+    "Sarricolea, P., Serrano-Notivoli, R., Fuentealba, M., Hernández-Mora, M., de la Barrera, F., Smith, P. y Meseguer-Ruiz, Ó. (2020). Recent wildfires in Central Chile: Detecting links between burned areas and population exposure in the wildland urban interface. Science of the Total Environment 706, 135894. https://doi.org/10.1016/j.scitotenv.2019.135894",
     "Schug, F., Bar-Massada, A., Carlson, A. R., Cox, H., et al. (2023). The global wildland-urban interface. Nature 621, 94-99. https://doi.org/10.1038/s41586-023-06320-0",
     "CONAF (2024). Análisis Nacional de Riesgo de Incendios Forestales y Zonas de Interfaz. https://www.conaf.cl/incendios/analisis-nacional-de-riesgo-de-incendios-forestales/ Visor: https://geprif.maps.arcgis.com/apps/dashboards/09532374973a495bb185fcbe55711cd3",
     "Universidad de Chile (2026). MapBiomas Fuego revela 1,2 millones de hectáreas quemadas en 13 años. https://uchile.cl/noticias/244116/mapbiomas-fuego-revela-12-millones-de-hectareas-quemadas-en-13-anos",
     "Corporación Ciudades, con datos de SENAPRED al 6-7-2026, citado en G5 Noticias (10-8-2026). https://g5noticias.cl/2026/08/10/a-cinco-anos-de-la-nueva-institucionalidad-un-40%de-las-comunas-de-chile-siguen-sin-un-plan-formalizado-para-reducir-el-riesgo-de-desastres/",
     "Ley 21.364 (2021), artículo 28. Biblioteca del Congreso Nacional de Chile.",
+    "SENAPRED (2026). Visor Chile Preparado. https://senapred.cl/visor-chile-preparado/",
     "NOAA Climate Prediction Center (2026). ENSO Diagnostic Discussion, 8 de octubre de 2026. https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml",
     "OpenStreetMap (2026). Lugares con nombre (place), consultados el 30-10-2026 vía Overpass API. © colaboradores de OpenStreetMap, licencia ODbL. https://www.openstreetmap.org/copyright",
 ]
@@ -353,7 +447,7 @@ doc.add_heading("Cita de los datos de MapBiomas", 2)
 for t in (
     "MapBiomas – Colección 1 de la Serie Anual de Mapas de Cobertura y Uso del Suelo de Chile, consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
     "MapBiomas – Colección 2 de la Serie Anual de Mapas de Cobertura y Uso del Suelo de Chile, consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
-    "MapBiomas – Colección 1 de MapBiomas Fuego Chile (área quemada anual), consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
+    "MapBiomas – Colección 1 de MapBiomas Fuego Chile (área quemada anual y frecuencia de quema), consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
 ):
     par = doc.add_paragraph(t)
     for run in par.runs:
