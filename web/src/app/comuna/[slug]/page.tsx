@@ -141,7 +141,7 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
   return (
     <article className="space-y-12">
       <header className="space-y-2">
-        <Link href="/#comunas" className="no-print text-sm text-link hover:underline">← Todas las comunas</Link>
+        <Link href="/comunas/" className="no-print text-sm text-link hover:underline">← Todas las comunas</Link>
         <h1 className="text-3xl font-semibold tracking-tight">{c.comuna}</h1>
         <p className="text-muted">Provincia de {c.provincia}, Región de {c.region}. Superficie comunal de {ha(c.area_ha)}.</p>
       </header>

@@ -76,6 +76,7 @@ export default function MapaComunas({ mapa, filas }: { mapa: Mapa; filas: FilaRe
             );
           })}
         </svg>
+        <p className="mt-3 text-sm text-muted lg:hidden">Toca una comuna para abrir su ficha.</p>
         <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
           {COLORES.map((color, i) => (
             <li key={color} className="inline-flex items-center gap-1.5">
@@ -86,7 +87,7 @@ export default function MapaComunas({ mapa, filas }: { mapa: Mapa; filas: FilaRe
         </ul>
       </div>
 
-      <div className="min-h-40 flex-1 border border-line p-4 lg:sticky lg:top-4">
+      <div className="hidden min-h-40 flex-1 border border-line p-4 lg:sticky lg:top-4 lg:block">
         {comunaActiva ? (
           <div className="space-y-2">
             <p className="text-lg font-medium">{comunaActiva.comuna}</p>
@@ -120,8 +121,7 @@ export default function MapaComunas({ mapa, filas }: { mapa: Mapa; filas: FilaRe
           </div>
         ) : (
           <p className="text-sm text-muted">
-            Pasa el cursor o usa el tabulador sobre una comuna del mapa para ver sus hectáreas de plantación junto a zonas
-            pobladas.
+            Pasa el cursor o usa el tabulador sobre una comuna para ver sus cifras y sectores. Haz clic para abrir su ficha.
           </p>
         )}
       </div>

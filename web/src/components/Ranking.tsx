@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import type { FilaResumen } from "@/lib/datos";
 import { ha, haSigno } from "@/lib/formato";
 
-export default function Ranking({ filas }: { filas: FilaResumen[] }) {
+export default function Ranking({ filas, todasInicial = false }: { filas: FilaResumen[]; todasInicial?: boolean }) {
   const regiones = useMemo(() => [...new Set(filas.map((f) => f.region))].sort((a, b) => a.localeCompare(b, "es")), [filas]);
   const [region, setRegion] = useState("");
-  const [todas, setTodas] = useState(false);
+  const [todas, setTodas] = useState(todasInicial);
   const visibles = filas.filter((f) => f.puesto !== null && (!region || f.region === region));
   const mostradas = todas || region ? visibles : visibles.slice(0, 25);
   return (

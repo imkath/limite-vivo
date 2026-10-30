@@ -52,3 +52,13 @@ input[type="number"] { -moz-appearance: textfield; }
   body { font-size: 11pt; }
   a { color: inherit; text-decoration: none; }
 }
+
+/* Largo de línea cómodo para leer (60-75 caracteres) en párrafos y listas; no afecta tablas ni mapas */
+main p,
+main li {
+  max-width: 72ch;
+}
+main td p,
+main figcaption {
+  max-width: none;
+}

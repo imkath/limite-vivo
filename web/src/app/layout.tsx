@@ -18,8 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="no-print border-b border-ink">
           <nav className="mx-auto flex max-w-5xl flex-wrap items-baseline justify-between gap-3 px-4 py-3">
             <Link href="/" className="text-base font-semibold tracking-tight text-ink">Límite Vivo</Link>
-            <div className="flex gap-5 text-sm">
-              <Link href="/#comunas" className="text-ink hover:text-link">Comunas</Link>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 whitespace-nowrap text-sm">
+              <Link href="/hallazgos/" className="text-ink hover:text-link">Hallazgos</Link>
+              <Link href="/comunas/" className="text-ink hover:text-link">Comunas</Link>
               <Link href="/direccion/" className="text-ink hover:text-link">Tu dirección</Link>
               <Link href="/metodologia/" className="text-ink hover:text-link">Metodología</Link>
               <a href="/datos/limite-vivo-comunas.csv" download className="text-ink hover:text-link">Datos (CSV)</a>
