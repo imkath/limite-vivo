@@ -71,7 +71,7 @@ export default function Hallazgos() {
           comuna da la cifra local.
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] max-w-3xl text-sm">
+          <table className="w-full max-w-3xl text-sm">
             <caption className="mb-2 text-left text-muted">Hectáreas de plantación forestal según su distancia a zonas pobladas</caption>
             <thead>
               <tr className="border-b border-ink text-left">
@@ -124,7 +124,7 @@ export default function Hallazgos() {
           franja por sí solo.
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[620px] max-w-3xl text-sm">
+          <table className="w-full max-w-3xl text-sm">
             <caption className="mb-2 text-left text-muted">Origen de la plantación junto a zonas pobladas, en hectáreas</caption>
             <thead>
               <tr className="border-b border-ink text-left">
@@ -171,7 +171,7 @@ export default function Hallazgos() {
           propósito: solo plantación forestal, para todo el país y comuna por comuna.
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[620px] max-w-3xl text-sm">
+          <table className="w-full max-w-3xl text-sm">
             <caption className="mb-2 text-left text-muted">Las 15 comunas con más personas a menos de 100 m de plantación forestal</caption>
             <thead>
               <tr className="border-b border-ink text-left">
@@ -234,13 +234,13 @@ export default function Hallazgos() {
           {r.sectores_historial.reincidentes.toLocaleString("es-CL")} tuvieron media hectárea o más que se quemó dos o más veces.
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[620px] text-sm">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink text-left">
                 <th className="py-2 pr-2 font-medium">Sector</th>
                 <th className="py-2 pr-2 font-medium">Comuna</th>
                 <th className="py-2 pr-2 text-right font-medium">Plantación a menos de 100 m</th>
-                <th className="py-2 pr-2 text-right font-medium">Borde expuesto (aprox.)</th>
+                <th className="hidden py-2 pr-2 text-right font-medium sm:table-cell">Borde expuesto (aprox.)</th>
               </tr>
             </thead>
             <tbody>
@@ -252,7 +252,7 @@ export default function Hallazgos() {
                     <span className="text-muted">, sector {s.n}</span>
                   </td>
                   <td className="py-2 pr-2 text-right">{ha(s.plantacion_100m_ha)}</td>
-                  <td className="py-2 pr-2 text-right">{(Math.round(s.borde_m / 10) * 10).toLocaleString("es-CL")} m</td>
+                  <td className="hidden py-2 pr-2 text-right sm:table-cell">{(Math.round(s.borde_m / 10) * 10).toLocaleString("es-CL")} m</td>
                 </tr>
               ))}
             </tbody>

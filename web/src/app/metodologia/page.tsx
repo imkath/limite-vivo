@@ -242,7 +242,7 @@ export default function Metodologia() {
           comunas. Entran las comunas con al menos 20 ha de plantación en la franja y al menos 10 ha quemadas en ella.
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] text-sm">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink text-left">
                 <th className="py-2 font-medium">Plantación frente a</th>

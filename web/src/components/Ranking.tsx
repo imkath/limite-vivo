@@ -19,10 +19,10 @@ export default function Ranking({ filas, todasInicial = false }: { filas: FilaRe
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-end gap-3">
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="region" className="mb-1 block text-sm font-medium">Región</label>
           <select id="region" value={region} onChange={(e) => setRegion(e.target.value)}
-            className="rounded-sm border border-line bg-bg px-3 py-2 text-sm">
+            className="w-full rounded-sm border border-line bg-bg px-3 py-2 text-sm sm:w-auto">
             <option value="">Todo Chile</option>
             {regiones.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
@@ -30,12 +30,12 @@ export default function Ranking({ filas, todasInicial = false }: { filas: FilaRe
         <p className="text-sm text-muted">{visibles.length} comunas con plantación a menos de 500 m de zonas pobladas</p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-muted">
               <th className="py-2 pr-2 font-medium">#</th>
               <th className="py-2 pr-2 font-medium">Comuna</th>
-              <th className="py-2 pr-2 font-medium">Región</th>
+              <th className="hidden py-2 pr-2 font-medium sm:table-cell">Región</th>
               <th className="py-2 pr-2 text-right font-medium">A menos de 500 m, 2022</th>
               <th className="py-2 pr-2 text-right font-medium">Cambio desde 2000</th>
               <th className="py-2 text-right font-medium">A menos de 100 m</th>
@@ -46,7 +46,7 @@ export default function Ranking({ filas, todasInicial = false }: { filas: FilaRe
               <tr key={f.slug} className="border-b border-line">
                 <td className="py-2 pr-2 tabular-nums text-muted">{f.puesto}</td>
                 <td className="py-2 pr-2"><Link href={`/comuna/${f.slug}/`} className="text-link underline-offset-2 hover:underline">{f.comuna}</Link></td>
-                <td className="py-2 pr-2 text-muted">{f.region}</td>
+                <td className="hidden py-2 pr-2 text-muted sm:table-cell">{f.region}</td>
                 <td className="py-2 pr-2 text-right tabular-nums">{ha(f.p500_2022)}</td>
                 <td className="py-2 pr-2 text-right tabular-nums">{haSigno(f.p500_2022 - f.p500_2000)}</td>
                 <td className="py-2 text-right tabular-nums">{ha(f.p100_2022)}</td>
