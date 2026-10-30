@@ -237,6 +237,7 @@ lista([
     "El control encontró dos errores, que se corrigieron antes de entregar. Los mapas de control mostraron que la infraestructura incluía carreteras, y la verificación independiente mostró que la primera versión medía la distancia de centro a centro de píxel, lo que subestimaba la franja de 100 m en cerca de 15 %.",
 ])
 
+doc.add_page_break()
 doc.add_heading("7. Resultados nacionales", 1)
 tabla(
     ["Distancia a zonas pobladas", "2000 (C1)", "2022 (C1)", "2000 (C2)", "2024 (C2)"],
@@ -287,7 +288,7 @@ doc.add_heading("9. La herramienta", 1)
 lista([
     "Inicio con las cifras nacionales, el contraste con incendios, un mapa clicable de las comunas de Valparaíso a Los Lagos, los 25 sectores con más plantación junto a zonas pobladas y un ranking filtrable por región.",
     "Una ficha por comuna (343) con mapa, sectores numerados con enlace a OpenStreetMap, comunas vecinas, tabla por distancia en ambas colecciones, indicación de si las colecciones coinciden en la tendencia, contraste con incendios cuando hay cobertura de Fuego y usos para el municipio.",
-    "Búsqueda por dirección o con la ubicación del navegador: muestra a cuántos metros está la plantación más cercana, cuántas hectáreas hay en 500 m y si hubo área quemada cerca entre 2023 y 2025. La ubicación del navegador no se envía a ningún servicio externo.",
+    "Búsqueda por dirección o con la ubicación del navegador, que muestra a cuántos metros está la plantación más cercana, cuántas hectáreas hay en 500 m y si hubo área quemada cerca entre 2023 y 2025. La ubicación del navegador no se envía a ningún servicio externo.",
     "Metodología completa con antecedentes, control de calidad y limitaciones.",
     "Datos descargables en CSV y código abierto en Python (rasterio, numpy, scipy, geopandas) y en la web (Next.js, exportación estática).",
 ])
