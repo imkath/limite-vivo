@@ -36,9 +36,12 @@ export default function Sectores({ sectores, conFuego }: { sectores: Sector[]; c
               <tr key={s.n} id={`sector-${s.n}`} className="fila-sector border-b border-line">
                 <td className="py-2 pr-2">
                   {s.marca ? (
-                    <a href={`#marca-${s.n}`} className="text-link underline" aria-label={`Ver el sector ${s.n} en el mapa`}>
-                      {s.n}
-                    </a>
+                    <>
+                      <a href={`#marca-${s.n}`} className="hidden text-link underline sm:inline" aria-label={`Ver el sector ${s.n} en el mapa`}>
+                        {s.n}
+                      </a>
+                      <span className="sm:hidden">{s.n}</span>
+                    </>
                   ) : (
                     <span className="text-muted">{s.n}</span>
                   )}

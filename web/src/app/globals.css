@@ -113,6 +113,11 @@ a[target="_blank"]::after {
   outline: 4px solid var(--link);
   outline-offset: 2px;
 }
+/* En pantallas chicas el mapa se achica y los marcadores quedarían encimados como zonas táctiles. Siguen
+   dibujados en la imagen, la tabla trae el número y el enlace de cada sector, y ahí el número no enlaza al mapa. */
+@media (max-width: 639px) {
+  .marca { display: none; }
+}
 .fila-sector {
   scroll-margin-top: 30vh;
 }

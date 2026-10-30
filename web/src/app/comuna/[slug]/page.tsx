@@ -242,7 +242,7 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
                     {texto}
                   </span>
                 ))}
-                <span>Las zonas más oscuras se quemaron entre 2023 y 2025. La línea negra es el límite comunal. Los números marcan los sectores de la tabla; haz clic en uno para ir a su fila. Cobertura 2022, Colección 1.</span>
+                <span>Las zonas más oscuras se quemaron entre 2023 y 2025. La línea negra es el límite comunal. Los números marcan los sectores de la tabla; en pantallas grandes, haz clic en uno para ir a su fila. Cobertura 2022, Colección 1.</span>
               </figcaption>
             </figure>
 
