@@ -62,3 +62,25 @@ main td p,
 main figcaption {
   max-width: none;
 }
+
+/* Un elemento con posición absoluta dentro de una tabla con scroll lateral no debe ensanchar la página */
+.overflow-x-auto {
+  position: relative;
+}
+
+/* Enlaces externos: flecha diagonal después del texto y aviso para lectores de pantalla.
+   Los internos no llevan ícono. */
+a[target="_blank"]::after {
+  content: "";
+  content: "" / " (se abre en otra pestaña)";
+  display: inline-block;
+  width: 0.62em;
+  height: 0.62em;
+  margin-left: 0.22em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 1h6v6M9 1 1.5 8.5' fill='none' stroke='black' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 1h6v6M9 1 1.5 8.5' fill='none' stroke='black' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

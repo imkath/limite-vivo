@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buscarCelda, comunaDesdeDireccion, nombreComuna, type ResultadoCelda } from "@/lib/grilla";
 
 const nf0 = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
@@ -17,11 +17,18 @@ type Ubicacion = { lat: number; lon: number; etiqueta: string; address?: Record<
 
 export default function Direccion() {
   const [direccion, setDireccion] = useState("");
+  const resultadoRef = useRef<HTMLElement>(null);
   const [opciones, setOpciones] = useState<ResultadoNominatim[] | null>(null);
   const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null);
   const [cargando, setCargando] = useState<"geo" | "buscar" | null>(null);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState<ResultadoCelda | "fuera" | null>(null);
+
+  // Al llegar un resultado, llevar la vista hasta él (salto directo, sin animación)
+  useEffect(() => {
+    if (!resultado || !ubicacion) return;
+    resultadoRef.current?.scrollIntoView({ block: "start" });
+  }, [resultado, ubicacion]);
   const [comunaCercana, setComunaCercana] = useState<{ slug: string; comuna: string } | null>(null);
   const [comunaNombre, setComunaNombre] = useState<string | null>(null);
 
@@ -188,7 +195,8 @@ export default function Direccion() {
       </section>
 
       {ubicacion && resultado && (
-        <section className="max-w-3xl space-y-4 border-t border-ink pt-8">
+        <section ref={resultadoRef} aria-live="polite"
+          className="max-w-3xl scroll-mt-4 space-y-4 border-t border-ink pt-8">
           <p className="text-sm text-muted">{ubicacion.etiqueta}</p>
           {ubicacion.address && !ubicacion.address.house_number && (
             <p className="text-sm">
@@ -219,51 +227,140 @@ export default function Direccion() {
               )}
             </div>
           ) : (
-            <Resultado celda={resultado} comunaNombre={comunaNombre} />
+            <Resultado celda={resultado} comunaNombre={comunaNombre} lat={ubicacion.lat} lon={ubicacion.lon} porBusqueda={Boolean(ubicacion.address)} />
           )}
         </section>
       )}
 
-      <section className="max-w-3xl space-y-2 border-t border-line pt-6 text-sm text-muted">
-        <h2 className="text-base font-medium text-ink">Limitaciones</h2>
-        <p>
-          Los datos son de la cobertura 2022 de MapBiomas Chile (resolución de 30 m, agrupada en celdas de unos 100 m).
-          La ubicación de tu dirección puede ser aproximada, sobre todo si la buscaste por texto. La herramienta mide
-          distancia a la plantación forestal más cercana, no el riesgo de incendio de tu dirección.
-        </p>
-      </section>
     </div>
   );
 }
 
-function Resultado({ celda, comunaNombre }: { celda: ResultadoCelda; comunaNombre: string | null }) {
-  const redondeada = Math.round(celda.distanciaM / 50) * 50;
-  const frase =
-    celda.distanciaM >= celda.topeM
-      ? `La plantación forestal más cercana a ese punto está a más de ${nf0.format(celda.topeM)} m.`
-      : celda.distanciaM === 0
-        ? "Hay plantación forestal en la misma celda de unos 100 m donde queda ese punto."
-        : `La plantación forestal más cercana a ese punto está a unos ${nf0.format(redondeada)} m.`;
+/** Distancia legible: metros redondeados a 10 (bajo 100 m) o a 50, y kilómetros sobre 1 km. */
+function distanciaTexto(m: number) {
+  if (m < 100) return `${nf0.format(Math.max(10, Math.round(m / 10) * 10))} m`;
+  if (m < 1000) return `${nf0.format(Math.round(m / 50) * 50)} m`;
+  return `${nf1.format(m / 1000)} km`;
+}
+
+// Regla con las franjas de la herramienta; cada tramo ocupa el mismo ancho para que las distancias cortas se vean
+const MARCAS = [0, 100, 200, 500, 1000, 3000];
+const ETIQUETAS = ["0", "100 m", "200 m", "500 m", "1 km", "3 km"];
+
+function posicion(m: number) {
+  if (m >= MARCAS[MARCAS.length - 1]) return 100;
+  const k = MARCAS.findIndex((x, i) => m >= x && m < MARCAS[i + 1]);
+  const tramo = 100 / (MARCAS.length - 1);
+  return k * tramo + ((m - MARCAS[k]) / (MARCAS[k + 1] - MARCAS[k])) * tramo;
+}
+
+function Regla({ distancia }: { distancia: number }) {
+  const x = posicion(distancia);
+  const tramo = 100 / (MARCAS.length - 1);
   return (
-    <div className="space-y-3">
-      <p className="text-lg">{frase}</p>
-      <p>
-        {celda.ha500 < 0.05
-          ? "No hay plantación forestal en un radio de 500 m."
-          : `En un radio de 500 m hay ${nf1.format(celda.ha500)} ha de plantación forestal.`}
-      </p>
-      <p>
-        {celda.quema === null
-          ? "No hay dato de incendios para esta zona, porque MapBiomas Fuego no cubre esta región."
-          : celda.quema
-            ? "Entre 2023 y 2025 hubo área quemada a menos de 500 m de ese punto, según MapBiomas Fuego."
-            : "Entre 2023 y 2025 no hubo área quemada a menos de 500 m de ese punto, según MapBiomas Fuego."}
-      </p>
-      <p>
-        <Link href={`/comuna/${celda.slug}/`} className="text-link underline">
-          Ver la ficha de {comunaNombre ?? "la comuna"}
-        </Link>
-      </p>
+    <figure className="space-y-2" aria-hidden="true">
+      <div className="relative h-3">
+        {MARCAS.slice(0, -1).map((m, i) => (
+          <div
+            key={m}
+            className="absolute top-0 h-3 border-r border-bg"
+            style={{ left: `${i * tramo}%`, width: `${tramo}%`, background: m < 500 ? (m < 100 ? "#ed8c1a" : m < 200 ? "#f2a94f" : "#f7cb93") : "#e3e5e7" }}
+          />
+        ))}
+        <div className="absolute -top-1.5 h-6 w-0.5 bg-ink" style={{ left: `calc(${x}% - 1px)` }} />
+      </div>
+      <div className="relative h-4 text-xs text-muted">
+        {ETIQUETAS.map((t, i) => (
+          <span
+            key={t}
+            className="absolute whitespace-nowrap"
+            style={{ left: `${i * tramo}%`, transform: i === 0 ? "none" : i === ETIQUETAS.length - 1 ? "translateX(-100%)" : "translateX(-50%)" }}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+      <figcaption className="text-xs text-muted">
+        La línea marca la distancia a la plantación más cercana. En naranjo, las franjas de 100, 200 y 500 m que usa Límite Vivo.
+      </figcaption>
+    </figure>
+  );
+}
+
+function Resultado({
+  celda,
+  comunaNombre,
+  lat,
+  lon,
+  porBusqueda,
+}: {
+  celda: ResultadoCelda;
+  comunaNombre: string | null;
+  lat: number;
+  lon: number;
+  porBusqueda: boolean;
+}) {
+  const d = celda.distanciaM;
+  const lejos = d >= celda.topeM;
+  const titular = lejos
+    ? `No hay plantación forestal a menos de ${nf0.format(celda.topeM / 1000)} km de ese punto.`
+    : d === 0
+      ? "Hay plantación forestal junto a ese punto."
+      : d <= 500
+        ? `Hay plantación forestal a unos ${distanciaTexto(d)} de ese punto.`
+        : `La plantación forestal más cercana está a unos ${distanciaTexto(d)}.`;
+  const osm = `https://www.openstreetmap.org/?mlat=${lat.toFixed(5)}&mlon=${lon.toFixed(5)}#map=16/${lat.toFixed(5)}/${lon.toFixed(5)}`;
+  return (
+    <div className="space-y-6">
+      <p className="text-2xl font-semibold leading-snug tracking-tight">{titular}</p>
+      <Regla distancia={lejos ? celda.topeM : d} />
+      <dl className="divide-y divide-line border-y border-line text-sm">
+        <div className="flex justify-between gap-4 py-2">
+          <dt className="text-muted">Plantación más cercana</dt>
+          <dd className="text-right">{lejos ? `a más de ${nf0.format(celda.topeM / 1000)} km` : d === 0 ? "en la misma celda de unos 100 m" : `a unos ${distanciaTexto(d)}`}</dd>
+        </div>
+        <div className="flex justify-between gap-4 py-2">
+          <dt className="text-muted">Plantación en un radio de 500 m</dt>
+          <dd className="text-right">{celda.ha500 < 0.05 ? "ninguna" : `${nf1.format(celda.ha500)} ha`}</dd>
+        </div>
+        <div className="flex justify-between gap-4 py-2">
+          <dt className="text-muted">Área quemada a menos de 500 m, 2023 a 2025</dt>
+          <dd className="text-right">
+            {celda.quema === null ? "sin dato en esta región" : celda.quema ? "sí" : "no"}
+          </dd>
+        </div>
+      </dl>
+      <aside aria-labelledby="antes" className="space-y-2 pt-2 text-sm">
+        <h2 id="antes" className="font-semibold">Antes de sacar conclusiones</h2>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            Esto mide distancia, no riesgo de incendio. Que haya plantación cerca no significa que ese lugar se vaya a quemar, ni
+            que esté a salvo si no la hay.
+          </li>
+          <li>
+            Los mapas son de 2022 (MapBiomas Chile, Colección 1), la versión que calza con las estadísticas oficiales y es
+            anterior a los incendios de 2023 y 2024. Una plantación cortada, quemada o plantada después puede no aparecer.
+          </li>
+          <li>
+            {porBusqueda
+              ? "La ubicación de una dirección buscada por texto es aproximada, y el cálculo se hace por celdas de unos 100 m."
+              : "La ubicación del navegador puede tener un error de algunas decenas de metros, y el cálculo se hace por celdas de unos 100 m."}
+          </li>
+          {celda.quema === null && <li>MapBiomas Fuego cubre de la Región de Valparaíso a la de La Araucanía.</li>}
+        </ul>
+      </aside>
+      <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        <li>
+          <Link href={`/comuna/${celda.slug}/`} className="text-link underline">
+            Ver la ficha de {comunaNombre ?? "la comuna"} y sus sectores
+          </Link>
+        </li>
+        <li>
+          <a href={osm} target="_blank" rel="noopener noreferrer" className="text-link underline">
+            Ver este punto en OpenStreetMap
+          </a>
+        </li>
+      </ul>
     </div>
   );
 }

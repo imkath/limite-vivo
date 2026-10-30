@@ -15,15 +15,15 @@ export default function Sectores({ sectores, conFuego }: { sectores: Sector[]; c
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px] text-sm">
+        <table className="w-full text-sm sm:min-w-[620px]">
           <thead>
             <tr className="border-b border-ink text-left">
               <th className="py-2 pr-2 font-medium">N.º</th>
               <th className="py-2 pr-2 font-medium">Sector</th>
-              <th className="py-2 pr-2 text-right font-medium">Borde expuesto (aprox.)</th>
+              <th className="hidden py-2 pr-2 text-right font-medium sm:table-cell">Borde expuesto (aprox.)</th>
               <th className="py-2 pr-2 text-right font-medium">Plantación a menos de 100 m</th>
               {conFuego && <th className="py-2 pr-2 text-right font-medium">Plantación quemada 2023-2025</th>}
-              <th className="py-2 font-medium"><span className="sr-only">Mapa</span></th>
+              <th className="py-2 text-right font-medium">Mapa</th>
             </tr>
           </thead>
           <tbody>
@@ -31,7 +31,7 @@ export default function Sectores({ sectores, conFuego }: { sectores: Sector[]; c
               <tr key={s.n} className="border-b border-line">
                 <td className="py-2 pr-2 text-muted">{s.n}</td>
                 <td className="py-2 pr-2">{nombreSector(s)}</td>
-                <td className="py-2 pr-2 text-right">{nf0.format(Math.round(s.borde_m / 10) * 10)} m</td>
+                <td className="hidden py-2 pr-2 text-right sm:table-cell">{nf0.format(Math.round(s.borde_m / 10) * 10)} m</td>
                 <td className="py-2 pr-2 text-right">{s.plantacion_100m_ha < 1 ? "menos de 1 ha" : ha(s.plantacion_100m_ha)}</td>
                 {conFuego && (
                   <td className="py-2 pr-2 text-right">
@@ -41,7 +41,7 @@ export default function Sectores({ sectores, conFuego }: { sectores: Sector[]; c
                 <td className="whitespace-nowrap py-2 text-right">
                   <a href={enlaceMapa(s)} target="_blank" rel="noopener noreferrer" className="text-link underline"
                     aria-label={`Ver el sector ${s.n} en OpenStreetMap`}>
-                    Ver en mapa
+                    Ver
                   </a>
                 </td>
               </tr>
