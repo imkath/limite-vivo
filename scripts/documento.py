@@ -24,6 +24,9 @@ c1, c2 = r["nacional"]["col1"], r["nacional"]["col2"]
 v1, v2 = r["validacion"]["col1"], r["validacion"]["col2"]
 sens = r["sensibilidad"]["col1"]
 sin_una = r["sin_una_comuna"]["col1"]
+n_sect = r["sectores_total"]
+suma_sect = r["sectores_suma_100m_ha"]
+top_sect = r["sectores_top"]
 
 
 def n0(x):
@@ -37,6 +40,15 @@ def n2(x):
 
 def n1(x):
     return f"{x:.1f}".replace(".", ",")
+
+
+def nombre_sector(x):
+    if x["lugar_m"] <= 500:
+        return x["lugar"]
+    if x["lugar_m"] <= 2000:
+        d = f"{math.floor(x['lugar_m'] / 10 + 0.5) * 10} m" if x["lugar_m"] < 1000 else f"{x['lugar_m'] / 1000:.1f} km".replace(".", ",")
+        return f"Cerca de {x['lugar']} (a {d})"
+    return "Sin lugar con nombre a menos de 2 km"
 
 
 def pct(a, b):
@@ -125,7 +137,7 @@ t = doc.add_paragraph()
 run = t.add_run("Límite Vivo")
 run.bold = True
 run.font.size = Pt(24)
-p("Plantaciones forestales en el borde de las ciudades de Chile, comuna por comuna, 2000 a 2024", size=13)
+p("Plantaciones forestales en el borde de las ciudades de Chile, por comuna y por sector, 2000 a 2024", size=13)
 p(f"Autoría: {AUTORIA}", size=10)
 p(f"Herramienta en línea: {WEB}", size=10)
 p(f"Código y datos: {REPO}", size=10)
@@ -152,7 +164,10 @@ p(
     f"relación causal, y tiene excepciones como Viña del Mar en 2024."
 )
 p(
-    "La herramienta entrega una ficha por comuna con mapa, cifras por distancia, evolución, contraste con incendios y usos "
+    f"Como una comuna puede tener la plantación concentrada en pocos bordes, el borde de cada zona poblada se divide además en "
+    f"sectores de alrededor de 1 km. Hay {n0(n_sect)} sectores con plantación a menos de 100 m, cada uno con su ubicación y el nombre "
+    f"del barrio, población o localidad más cercana según OpenStreetMap. "
+    "La herramienta entrega una ficha por comuna con mapa, sectores, cifras por distancia, evolución, contraste con incendios y usos "
     "posibles en el Plan Comunal para la Reducción del Riesgo de Desastres (Ley 21.364). Los datos se descargan en CSV y el "
     "código es público."
 )
@@ -207,6 +222,7 @@ lista([
     "Zonas pobladas. Se usa la clase infraestructura urbana (código 24). Como incluye carreteras principales (Hernández et al., 2024), se eliminan las formas de menos de 3 píxeles de ancho con una apertura morfológica y las manchas de menos de 2 ha.",
     "Distancia. Para cada píxel se calcula la distancia en metros hasta el borde de la zona poblada más cercana, con el tamaño real del píxel según la latitud. Se consideran zonas pobladas hasta cerca de 1 km fuera de la comuna.",
     "Franjas. Se suman las hectáreas de plantación forestal (código 9) dentro de la comuna a menos de 100, 200 y 500 m, con el área de cada píxel según su latitud.",
+    "Sectores. Con la cobertura de 2022 se marca el borde de cada zona poblada que tiene plantación a menos de 100 m. Los tramos expuestos a menos de unos 90 m entre sí se unen y se cortan en celdas de 0,01° (cerca de 1 km). Cada píxel de plantación a menos de 100 m se asigna al punto de zona poblada más cercano para sumar las hectáreas de cada sector. El largo del borde es aproximado (se cuenta en píxeles). Cada sector toma el nombre del lugar más cercano de OpenStreetMap (barrio, población, villa o localidad); si está a más de 500 m se indica la distancia y si está a más de 2 km se omite el nombre.",
     "Contraste con incendios. Con la cobertura de 2022 y el área quemada 2023 a 2025, se compara dentro de cada comuna (para no mezclar lugares con distinto clima, relieve e incendios) la proporción quemada de la plantación de la franja de 500 m con la de la vegetación natural y la agricultura de la misma franja. Las comunas se combinan con la razón de Mantel-Haenszel y el intervalo de confianza de 95 % se obtiene con 2.000 remuestreos de comunas. Entran las comunas con al menos 20 ha de plantación en la franja y 10 ha quemadas en ella.",
 ])
 
@@ -215,6 +231,7 @@ lista([
     "En 960 comparaciones de plantación e infraestructura por comuna contra las estadísticas oficiales de la Colección 1, la diferencia mediana fue de 0,04 % y la máxima de 0,31 %.",
     "Con la Colección 2 la plantación concilia (mediana de 0,07 %), pero la infraestructura difiere cerca de 3 % de forma sistemática. La imagen de Earth Engine no es exactamente la versión de las estadísticas publicadas, y por eso esa colección se usa como análisis de sensibilidad.",
     "Las franjas de seis comunas se recalcularon con un método independiente (polígonos, buffer en UTM y área elipsoidal). Las diferencias fueron menores a 1 % en la franja de 500 m y a 3 % en la de 200 m, y llegaron a 9 % en la de 100 m.",
+    f"La suma de la plantación de los {n0(n_sect)} sectores ({n0(suma_sect)} ha) difiere en {n1(abs(suma_sect / c1['2022']['plantacion_100m_ha'] - 1) * 100)} % de la cifra nacional a menos de 100 m. Ninguna comuna con 5 ha o más a esa distancia queda sin sectores, y su ubicación se revisó en mapas de control.",
     "Hay pruebas automáticas del filtro de zonas pobladas y del cálculo de Mantel-Haenszel, y las comunas sin plantación dan cero.",
     "El control encontró dos errores, que se corrigieron antes de entregar. Los mapas de control mostraron que la infraestructura incluía carreteras, y la verificación independiente mostró que la primera versión medía la distancia de centro a centro de píxel, lo que subestimaba la franja de 100 m en cerca de 15 %.",
 ])
@@ -231,6 +248,12 @@ p(f"Las 15 comunas con más plantación a menos de 500 m de zonas pobladas en 20
 tabla(
     ["Comuna", "Región", "500 m, 2000", "500 m, 2022", "100 m, 2022"],
     [[f"{c['puesto']}. {c['comuna']}", c["region"], n0(c["p500_2000"]), n0(c["p500_2022"]), n0(c["p100_2022"])] for c in top],
+)
+
+p("Los 10 sectores del país con más plantación forestal a menos de 100 m de una zona poblada (cobertura 2022, Colección 1):")
+tabla(
+    ["Sector", "Comuna", "Plantación a menos de 100 m (ha)", "Borde expuesto aprox. (m)"],
+    [[nombre_sector(x), f"{x['comuna']} (sector {x['n']})", n0(x["plantacion_100m_ha"]), n0(math.floor(x["borde_m"] / 10 + 0.5) * 10)] for x in top_sect[:10]],
 )
 
 doc.add_heading("8. Contraste con los incendios de 2023 a 2025", 1)
@@ -261,8 +284,8 @@ imagen("tome", 9.5, "Tomé. Rojo: zona poblada. Naranjo: plantación a menos de 
 
 doc.add_heading("9. La herramienta", 1)
 lista([
-    "Inicio con las cifras nacionales, el contraste con incendios y un ranking filtrable por región.",
-    "Una ficha por comuna (343) con mapa, tabla por distancia en ambas colecciones, indicación de si las colecciones coinciden en la tendencia, contraste con incendios cuando hay cobertura de Fuego y usos para el municipio.",
+    "Inicio con las cifras nacionales, el contraste con incendios, un mapa clicable de las comunas de Valparaíso a Los Lagos, los 25 sectores con más plantación junto a zonas pobladas y un ranking filtrable por región.",
+    "Una ficha por comuna (343) con mapa, sectores numerados con enlace a OpenStreetMap, comunas vecinas, tabla por distancia en ambas colecciones, indicación de si las colecciones coinciden en la tendencia, contraste con incendios cuando hay cobertura de Fuego y usos para el municipio.",
     "Metodología completa con antecedentes, control de calidad y limitaciones.",
     "Datos descargables en CSV y código abierto en Python (rasterio, numpy, scipy, geopandas) y en la web (Next.js, exportación estática).",
 ])
@@ -274,7 +297,9 @@ p(
     "a menos de 100 m de las casas, y usar la cifra al revisar el Plan Regulador Comunal. Los organismos de emergencia ganan una "
     "vista nacional comparable. Si se aprueba una ley con zonas de amortiguación, la herramienta permite estimar cuánta plantación "
     "queda dentro de franjas de 100, 200 o 500 m en cada comuna. Y las organizaciones vecinales y la prensa tienen un dato verificable de su propia comuna. "
-    "Como se apoya solo en datos abiertos de MapBiomas, se puede actualizar con cada nueva colección."
+    "Como se apoya solo en datos abiertos de MapBiomas, se puede actualizar con cada nueva colección. La temporada de incendios "
+    "2026-2027 coincide además con un El Niño fuerte a muy fuerte según el Centro de Predicción Climática de la NOAA (8 de octubre "
+    "de 2026), lo que hace oportuno contar con estos datos antes del verano."
 )
 
 doc.add_heading("11. Limitaciones", 1)
@@ -302,6 +327,8 @@ refs = [
     "Universidad de Chile (2026). MapBiomas Fuego revela 1,2 millones de hectáreas quemadas en 13 años. https://uchile.cl/noticias/244116/mapbiomas-fuego-revela-12-millones-de-hectareas-quemadas-en-13-anos",
     "Corporación Ciudades, con datos de SENAPRED al 6-7-2026, citado en G5 Noticias (10-8-2026). https://g5noticias.cl/2026/08/10/a-cinco-anos-de-la-nueva-institucionalidad-un-40%de-las-comunas-de-chile-siguen-sin-un-plan-formalizado-para-reducir-el-riesgo-de-desastres/",
     "Ley 21.364 (2021), artículo 28. Biblioteca del Congreso Nacional de Chile.",
+    "NOAA Climate Prediction Center (2026). ENSO Diagnostic Discussion, 8 de octubre de 2026. https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml",
+    "OpenStreetMap (2026). Lugares con nombre (place), consultados el 30-10-2026 vía Overpass API. © colaboradores de OpenStreetMap, licencia ODbL. https://www.openstreetmap.org/copyright",
 ]
 for t in refs:
     par = doc.add_paragraph(t)
