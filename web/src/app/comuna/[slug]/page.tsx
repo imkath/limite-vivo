@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CITAS, comuna, resumen, vecinas, type FilaResumen, type Franja, type Fuego } from "@/lib/datos";
 import { ha, haSigno, pct, tasa } from "@/lib/formato";
 import Sectores from "@/components/Sectores";
+import DescargaCsv from "@/components/DescargaCsv";
 import { nombreSector } from "@/lib/sectores";
 
 export const dynamicParams = false;
@@ -316,9 +317,8 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
       )}
 
       <footer className="space-y-2 border-t border-line pt-6 text-sm text-muted">
-        <p>
-          <a href="/datos/limite-vivo-comunas.csv" download className="text-link underline">Datos de todas las comunas (CSV)</a>
-          {" · "}
+        <p className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <DescargaCsv texto="Descargar datos de todas las comunas" />
           <Link href="/metodologia/" className="text-link underline">Metodología y limitaciones</Link>
         </p>
         <p>Fuentes</p>

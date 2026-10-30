@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import Link from "next/link";
+import DescargaCsv from "@/components/DescargaCsv";
 import "./globals.css";
 
-const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex" });
+const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-plex" });
 
 export const metadata: Metadata = {
   title: { default: "Límite Vivo", template: "%s · Límite Vivo" },
@@ -16,14 +17,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es-CL" className={plex.variable}>
       <body className="min-h-screen">
         <header className="no-print border-b border-ink">
-          <nav className="mx-auto flex max-w-5xl flex-wrap items-baseline justify-between gap-3 px-4 py-3">
-            <Link href="/" className="text-base font-semibold tracking-tight text-ink">Límite Vivo</Link>
-            <div className="flex flex-wrap gap-x-5 gap-y-1 whitespace-nowrap text-sm">
+          <nav className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <Link href="/" className="text-base font-bold uppercase tracking-[0.08em] text-ink">Límite Vivo</Link>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 whitespace-nowrap text-sm">
               <Link href="/hallazgos/" className="text-ink hover:text-link">Hallazgos</Link>
               <Link href="/comunas/" className="text-ink hover:text-link">Comunas</Link>
               <Link href="/direccion/" className="text-ink hover:text-link">Tu dirección</Link>
               <Link href="/metodologia/" className="text-ink hover:text-link">Metodología</Link>
-              <a href="/datos/limite-vivo-comunas.csv" download className="text-ink hover:text-link">Datos (CSV)</a>
+              <DescargaCsv compacto />
             </div>
           </nav>
         </header>

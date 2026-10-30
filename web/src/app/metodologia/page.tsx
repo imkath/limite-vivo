@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import DescargaCsv from "@/components/DescargaCsv";
 import { CITAS, resumen } from "@/lib/datos";
 import { ha } from "@/lib/formato";
 
@@ -251,7 +252,10 @@ export default function Metodologia() {
         <H2>Código y datos</H2>
         <p>
           Todo el procesamiento está en Python (rasterio, numpy, scipy y geopandas) y el código es público. Los resultados por
-          comuna se pueden <a href="/datos/limite-vivo-comunas.csv" download className="text-link underline">descargar en CSV</a>.
+          comuna están disponibles en un archivo CSV.
+        </p>
+        <p>
+          <DescargaCsv texto="Descargar datos de todas las comunas" />
         </p>
         <p className="text-sm text-muted">Fuentes de datos</p>
         <ul className="list-disc space-y-1 pl-5 text-sm text-muted">{CITAS.map((x) => <li key={x}>{x}</li>)}</ul>
