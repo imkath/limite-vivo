@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Migas from "@/components/Migas";
 import DescargaCsv from "@/components/DescargaCsv";
 import { VISOR_CONAF } from "@/lib/enlaces";
 import { CITAS, resumen } from "@/lib/datos";
@@ -27,6 +28,7 @@ export default function Metodologia() {
   return (
     <article className="max-w-3xl space-y-10 leading-relaxed">
       <header className="space-y-3">
+        <Migas ruta={[{ texto: "Metodología" }]} />
         <h1 className="text-3xl font-semibold tracking-tight">Metodología</h1>
         <p className="text-lg text-muted">Cómo se calcula cada cifra, cómo se revisó y qué no se puede concluir con ella.</p>
       </header>

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CITAS, comuna, resumen, vecinas, type FilaResumen, type Franja, type Fuego } from "@/lib/datos";
-import { ha, haSigno, pct, tasa } from "@/lib/formato";
+import { ha, haSigno, nombreRegion, pct, tasa } from "@/lib/formato";
 import Sectores from "@/components/Sectores";
 import DescargaCsv from "@/components/DescargaCsv";
 import { VISOR_CONAF } from "@/lib/enlaces";
+import Migas from "@/components/Migas";
 import { nombreSector } from "@/lib/sectores";
 
 export const dynamicParams = false;
@@ -144,9 +145,15 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
   return (
     <article className="space-y-12">
       <header className="space-y-2">
-        <Link href="/comunas/" className="no-print text-sm text-link hover:underline">← Todas las comunas</Link>
+        <Migas
+          ruta={[
+            { texto: "Comunas", href: "/comunas/" },
+            { texto: nombreRegion(c.region), href: `/comunas/?region=${encodeURIComponent(c.region)}` },
+            { texto: c.comuna },
+          ]}
+        />
         <h1 className="text-3xl font-semibold tracking-tight">{c.comuna}</h1>
-        <p className="text-muted">Provincia de {c.provincia}, Región de {c.region}. Superficie comunal de {ha(c.area_ha)}.</p>
+        <p className="text-muted">Provincia de {c.provincia}, {nombreRegion(c.region)}. Superficie comunal de {ha(c.area_ha)}.</p>
       </header>
 
       {sinFranja ? (
@@ -157,15 +164,22 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
               : `En ${c.comuna} hay ${ha(f22.plantacion_ha)} de plantación forestal, pero ninguna está a menos de 500 m de una zona poblada.`}
           </p>
           {vecinosConFranja.length > 0 ? (
-            <div className="space-y-2">
-              <p>Estas comunas vecinas sí tienen plantación forestal junto a zonas pobladas.</p>
-              <TablaVecinas filas={vecinosConFranja} />
-            </div>
+            <p>
+              Entre sus comunas vecinas,{" "}
+              {vecinosConFranja.map((v, i) => (
+                <span key={v.slug}>
+                  {i > 0 ? (i === vecinosConFranja.length - 1 ? " y " : ", ") : ""}
+                  <Link prefetch={false} href={`/comuna/${v.slug}/`} className="text-link underline">{v.comuna}</Link>
+                </span>
+              ))}{" "}
+              {vecinosConFranja.length === 1 ? "sí tiene" : "sí tienen"} plantación forestal junto a zonas pobladas. Sus cifras
+              están en la tabla de comunas vecinas, más abajo.
+            </p>
           ) : top3Region.length > 0 ? (
             <div className="space-y-2">
               <p>
-                Ninguna comuna vecina tiene plantación forestal junto a zonas pobladas. Estas son las tres con más franja en la
-                Región de {c.region}.
+                Ninguna comuna vecina tiene plantación forestal junto a zonas pobladas. Estas son las tres con más franja en la{" "}
+                {nombreRegion(c.region)}.
               </p>
               <TablaVecinas filas={top3Region} />
             </div>
@@ -180,7 +194,7 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
                 En 2022, {c.comuna} tenía {ha(f22.plantacion_500m_ha)} de plantación forestal a menos de 500 m de una zona poblada
                 y {ha(f22.plantacion_100m_ha)} a menos de 100 m.
                 {c.puesto
-                  ? ` Es la comuna número ${c.puesto} de ${c.puesto_de} en el país por la franja de 500 m, y la número ${puestoRegion} de ${regionFilas.length} en la Región de ${c.region}.`
+                  ? ` Es la comuna número ${c.puesto} de ${c.puesto_de} en el país por la franja de 500 m, y la número ${puestoRegion} de ${regionFilas.length} en la ${nombreRegion(c.region)}.`
                   : ""}{" "}
                 De toda
                 su plantación ({ha(f22.plantacion_ha)}), el {pct(tasa(f22.plantacion_500m_ha, f22.plantacion_ha))} queda dentro
@@ -309,9 +323,9 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
       <section aria-labelledby="contexto" className="max-w-3xl space-y-2">
         <h2 id="contexto" className="text-2xl font-semibold tracking-tight">La comuna entre {s.anios[0]} y {s.anios[n]}</h2>
         <p>
-          Según las estadísticas oficiales de la Colección 2, la plantación forestal de {c.comuna} pasó de {ha(s.plantacion[0])} en{" "}
-          {s.anios[0]} a {ha(s.plantacion[n])} en {s.anios[n]}, y la infraestructura urbana de {ha(s.urbano[0])} a{" "}
-          {ha(s.urbano[n])}.
+          {Math.max(...s.plantacion) < 1
+            ? `Según las estadísticas oficiales de la Colección 2, ${c.comuna} no tuvo plantación forestal entre ${s.anios[0]} y ${s.anios[n]}, y su infraestructura urbana pasó de ${ha(s.urbano[0])} a ${ha(s.urbano[n])}.`
+            : `Según las estadísticas oficiales de la Colección 2, la plantación forestal de ${c.comuna} pasó de ${ha(s.plantacion[0])} en ${s.anios[0]} a ${ha(s.plantacion[n])} en ${s.anios[n]}, y la infraestructura urbana de ${ha(s.urbano[0])} a ${ha(s.urbano[n])}.`}
         </p>
       </section>
 

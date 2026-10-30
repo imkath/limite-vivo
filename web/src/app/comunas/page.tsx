@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Migas from "@/components/Migas";
 import Link from "next/link";
 import Ranking from "@/components/Ranking";
 import { filasLivianas, resumen } from "@/lib/datos";
@@ -13,6 +14,7 @@ export default function Comunas() {
   return (
     <div className="space-y-8">
       <header className="max-w-3xl space-y-3">
+        <Migas ruta={[{ texto: "Comunas" }]} />
         <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">Comunas</h1>
         <p className="text-lg text-muted">
           Todas las comunas con plantación forestal a menos de 500 m de una zona poblada, ordenadas por hectáreas en 2022

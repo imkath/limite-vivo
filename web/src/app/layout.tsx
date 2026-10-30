@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import Link from "next/link";
 import DescargaCsv from "@/components/DescargaCsv";
+import Navegacion from "@/components/Navegacion";
+import { SITIO } from "@/lib/enlaces";
 import "./globals.css";
 
 const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-plex" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITIO),
+  openGraph: { siteName: "Límite Vivo", locale: "es_CL", type: "website" },
   title: { default: "Límite Vivo", template: "%s · Límite Vivo" },
   description:
     "Plantaciones forestales en el borde de las ciudades de Chile: hectáreas de plantación a menos de 100, 200 y 500 m de zonas pobladas en cada comuna, su evolución desde 2000 y su relación con los incendios 2023-2025. Datos de MapBiomas Chile.",
@@ -20,10 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <nav className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <Link href="/" className="text-base font-bold uppercase tracking-[0.08em] text-ink">Límite Vivo</Link>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 whitespace-nowrap text-sm">
-              <Link href="/hallazgos/" className="text-ink hover:text-link">Hallazgos</Link>
-              <Link href="/comunas/" className="text-ink hover:text-link">Comunas</Link>
-              <Link href="/direccion/" className="text-ink hover:text-link">Tu dirección</Link>
-              <Link href="/metodologia/" className="text-ink hover:text-link">Metodología</Link>
+              <Navegacion />
               <DescargaCsv compacto />
             </div>
           </nav>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Direccion from "@/components/Direccion";
+import Migas from "@/components/Migas";
 
 export const metadata: Metadata = {
   title: "Tu dirección",
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function PaginaDireccion() {
-  return <Direccion />;
+  return (
+    <div className="space-y-3">
+      <Migas ruta={[{ texto: "Tu dirección" }]} />
+      <Direccion />
+    </div>
+  );
 }

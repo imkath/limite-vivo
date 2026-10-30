@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Migas from "@/components/Migas";
 import Link from "next/link";
 import { nombreSector } from "@/lib/sectores";
 import { VISOR_CONAF } from "@/lib/enlaces";
+import { CONJUNTO_DE_DATOS, JsonLd } from "@/components/DatosEstructurados";
 import { resumen } from "@/lib/datos";
 import { ha, pctSigno } from "@/lib/formato";
 
@@ -29,7 +31,9 @@ export default function Hallazgos() {
 
   return (
     <div className="space-y-16">
+      <JsonLd datos={CONJUNTO_DE_DATOS} />
       <header className="max-w-3xl space-y-3">
+        <Migas ruta={[{ texto: "Hallazgos" }]} />
         <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">Hallazgos</h1>
         <p className="text-lg text-muted">
           Lo que muestran los mapas de MapBiomas Chile sobre la plantación forestal que llega hasta el borde de las zonas

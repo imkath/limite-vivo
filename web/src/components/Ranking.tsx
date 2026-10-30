@@ -1,12 +1,18 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FilaResumen } from "@/lib/datos";
 import { ha, haSigno } from "@/lib/formato";
 
 export default function Ranking({ filas, todasInicial = false }: { filas: FilaResumen[]; todasInicial?: boolean }) {
   const regiones = useMemo(() => [...new Set(filas.map((f) => f.region))].sort((a, b) => a.localeCompare(b, "es")), [filas]);
   const [region, setRegion] = useState("");
+  // Permite enlazar el listado ya filtrado: /comunas/?region=Maule
+  useEffect(() => {
+    const r = new URLSearchParams(window.location.search).get("region");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (r && filas.some((f) => f.region === r)) setRegion(r);
+  }, [filas]);
   const [todas, setTodas] = useState(todasInicial);
   const visibles = filas.filter((f) => f.puesto !== null && (!region || f.region === region));
   const mostradas = todas || region ? visibles : visibles.slice(0, 25);

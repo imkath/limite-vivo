@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { FilaResumen, Mapa } from "@/lib/datos";
-import { ha } from "@/lib/formato";
+import { ha, nombreRegion } from "@/lib/formato";
 import { nombreSector } from "@/lib/sectores";
 
 const COLORES = ["#eceeef", "#f6ddb0", "#f0b35c", "#ed8c1a", "#7a4a0c"] as const;
@@ -36,6 +36,10 @@ export default function MapaComunas({ mapa, filas }: { mapa: Mapa; filas: FilaRe
     return 4;
   };
 
+  const top5 = useMemo(
+    () => filas.filter((f) => f.puesto !== null).sort((a, b) => (a.puesto ?? 0) - (b.puesto ?? 0)).slice(0, 5),
+    [filas],
+  );
   const [activo, setActivo] = useState<string | null>(null);
   const comunaActiva = activo ? porSlug.get(activo) : null;
 
@@ -91,7 +95,7 @@ export default function MapaComunas({ mapa, filas }: { mapa: Mapa; filas: FilaRe
         {comunaActiva ? (
           <div className="space-y-2">
             <p className="text-lg font-medium">{comunaActiva.comuna}</p>
-            <p className="text-sm text-muted">Región de {comunaActiva.region}</p>
+            <p className="text-sm text-muted">{nombreRegion(comunaActiva.region)}</p>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <dt className="text-muted">A menos de 500 m, 2022</dt>
               <dd className="text-right tabular-nums">{ha(comunaActiva.p500_2022)}</dd>
@@ -120,9 +124,22 @@ export default function MapaComunas({ mapa, filas }: { mapa: Mapa; filas: FilaRe
             </p>
           </div>
         ) : (
-          <p className="text-sm text-muted">
-            Pasa el cursor o usa el tabulador sobre una comuna para ver sus cifras y sectores. Haz clic para abrir su ficha.
-          </p>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted">
+              Pasa el cursor o usa el tabulador sobre una comuna para ver sus cifras y sectores. Haz clic para abrir su ficha.
+            </p>
+            <p className="font-medium">Las cinco con más plantación a menos de 500 m de zonas pobladas</p>
+            <ol className="space-y-1">
+              {top5.map((c) => (
+                <li key={c.slug} className="flex justify-between gap-3">
+                  <a href={`/comuna/${c.slug}/`} className="text-link underline-offset-2 hover:underline">
+                    {c.puesto}. {c.comuna}
+                  </a>
+                  <span className="tabular-nums">{ha(c.p500_2022)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
         )}
       </div>
     </div>

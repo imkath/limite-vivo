@@ -3,6 +3,7 @@ import Buscador from "@/components/Buscador";
 import MapaComunas from "@/components/MapaComunas";
 import { filasBuscador, filasLivianas, mapa, resumen } from "@/lib/datos";
 import { VISOR_CONAF } from "@/lib/enlaces";
+import { JsonLd, SITIO_WEB } from "@/components/DatosEstructurados";
 import { ha, pct } from "@/lib/formato";
 
 const nf2 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -20,6 +21,7 @@ export default function Inicio() {
 
   return (
     <div className="space-y-16">
+      <JsonLd datos={SITIO_WEB} />
       <section className="max-w-3xl space-y-5">
         <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
           ¿Cuánta plantación de pino y eucalipto hay junto a las casas de tu comuna?
@@ -29,11 +31,12 @@ export default function Inicio() {
           de las zonas pobladas de cada comuna y en qué bordes se concentra.
         </p>
         <Buscador comunas={filasBuscador(r)} />
-        <p>
-          ¿Prefieres la cifra de tu casa?{" "}
-          <Link href="/direccion/" className="text-link underline">Busca tu dirección</Link> y te decimos a cuántos metros está
-          la plantación más cercana.
-        </p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
+          <Link href="/direccion/" className="rounded-sm border border-ink px-4 py-2 text-sm text-ink hover:bg-tint">
+            Buscar por dirección
+          </Link>
+          <p className="text-sm text-muted">Te dice a cuántos metros de tu casa está la plantación más cercana.</p>
+        </div>
       </section>
 
       <section aria-labelledby="hallazgo" className="max-w-3xl space-y-3 border-t border-ink pt-6">
