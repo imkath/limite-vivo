@@ -7,7 +7,10 @@ Para cada comuna (cobertura 2022, Colección 1):
   celdas de 0,01° (~1 km) para que un sector sea un trozo de borde que se pueda recorrer;
 - cada píxel de plantación a menos de 100 m de la zona poblada se asigna al píxel de borde más cercano,
   y así se suman las hectáreas de plantación de cada sector;
-- el nombre es el del lugar de OpenStreetMap más cercano (barrio, población, villa o localidad).
+- el nombre es el del lugar de OpenStreetMap más cercano (barrio, población, villa o localidad);
+- donde hay datos de MapBiomas Fuego (Valparaíso a La Araucanía) se suma, además, la superficie de la
+  franja de 100 m del sector (cualquier cobertura) que se quemó al menos una vez entre 2013 y 2025, y la
+  que se quemó dos o más veces en ese período.
 """
 import json
 import math
@@ -90,7 +93,7 @@ def sectores_comuna(args):
     asignado = etiqueta[iy[cerca], ix[cerca]]
     ha_plant = np.bincount(asignado, weights=np.broadcast_to(area, c.shape)[cerca], minlength=n + 1)
 
-    quem = None
+    quem = hist1 = hist2 = None
     if region in REGIONES_FUEGO:
         fue = [rasterio.open(f"data/ras/fire_{a}.tif") for a in (2023, 2024, 2025)]
         col = round((tr.c - fue[0].transform.c) / fue[0].transform.a)
@@ -100,6 +103,15 @@ def sectores_comuna(args):
             q |= s.read(1, window=Window(col, row, c.shape[1], c.shape[0]), boundless=True, fill_value=0) == 1
         qc = q[cerca]
         quem = np.bincount(asignado[qc], weights=np.broadcast_to(area, c.shape)[cerca][qc], minlength=n + 1)
+        # Historial 2013-2025: superficie de la franja de 100 m (cualquier cobertura) quemada una o más veces
+        frec = rasterio.open("data/ras/freq_2013_2025.tif").read(
+            1, window=Window(col, row, c.shape[1], c.shape[0]), boundless=True, fill_value=0)
+        franja = ~pob & (d_pob <= DIST)
+        asig_fr = etiqueta[iy[franja], ix[franja]]
+        area_fr = np.broadcast_to(area, c.shape)[franja]
+        f = frec[franja]
+        hist1 = np.bincount(asig_fr[f >= 1], weights=area_fr[f >= 1], minlength=n + 1)
+        hist2 = np.bincount(asig_fr[f >= 2], weights=area_fr[f >= 2], minlength=n + 1)
 
     out = []
     for k in range(1, n + 1):
@@ -119,6 +131,8 @@ def sectores_comuna(args):
             "lat": round(float(lat), 5), "lon": round(float(lon), 5),
             "borde_m": round(largo), "plantacion_100m_ha": round(float(ha_plant[k]), 1),
             "quemada_ha": None if quem is None else round(float(quem[k]), 1),
+            "franja_quemada_2013_2025_ha": None if hist1 is None else round(float(hist1[k]), 1),
+            "franja_reincidente_2013_2025_ha": None if hist2 is None else round(float(hist2[k]), 1),
             "lugar": lugar, "lugar_m": round(dist_lugar),
         })
     return out

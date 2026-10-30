@@ -37,6 +37,28 @@ for c in json.load(open("web/public/datos/resumen.json"))["comunas"]:
         con_franja.add(c["slug"])
 
 
+def separar(puntos, diametro, iteraciones=300):
+    """Aparta marcadores encimados (en píxeles) sin alejarlos más de lo necesario de su lugar."""
+    p = puntos.astype(float).copy()
+    for _ in range(iteraciones):
+        movido = False
+        for i in range(len(p)):
+            for j in range(i + 1, len(p)):
+                d = p[j] - p[i]
+                dist = math.hypot(*d)
+                if dist < diametro:
+                    if dist < 1e-6:
+                        d, dist = np.array([1.0, 0.0]), 1.0
+                    empuje = (diametro - dist) / 2 * d / dist
+                    p[i] -= empuje
+                    p[j] += empuje
+                    movido = True
+        if not movido:
+            break
+        p += (puntos - p) * 0.02  # leve atracción a la posición real
+    return p
+
+
 def dibujar(args):
     nombre, geom = args
     slug = slugs[nombre]
@@ -72,22 +94,28 @@ def dibujar(args):
     ax = fig.add_axes([0, 0, 1, 1])
     ax.imshow(img, extent=ext, interpolation="nearest")
     gpd.GeoSeries([geom]).boundary.plot(ax=ax, color="#1b1f1d", lw=0.9)
-    # Marcadores numerados de los 10 sectores con más plantación a menos de 100 m (mismo orden que la ficha)
     marcados = json.load(open(f"web/public/datos/comunas/{slug}.json"))["sectores"][:10]
-    for sct in marcados:
-        ax.plot(sct["lon"], sct["lat"], "o", ms=15, mfc="#16181a", mec="white", mew=1.5, zorder=5)
-        ax.text(sct["lon"], sct["lat"], str(sct["n"]), color="white", fontsize=8, fontweight="bold",
-                ha="center", va="center", zorder=6)
     ax.set_xlim(ext[0], ext[1]); ax.set_ylim(ext[2], ext[3])
     ax.set_aspect(1 / math.cos(math.radians(lat)))
     ax.axis("off")
-    # Posición de cada marcador en la imagen final (en % del ancho y alto), para hacerlos clicables en la web
-    fig.canvas.draw()
+    fig.canvas.draw()  # fija la escala final antes de convertir coordenadas a píxeles
     ancho_px, alto_px = fig.canvas.get_width_height()
+    # Marcadores numerados de los 10 sectores con más plantación (mismo orden que la ficha).
+    # Si quedan encimados se separan lo justo y una línea fina los une a su ubicación real.
+    origen = np.array([ax.transData.transform((sct["lon"], sct["lat"])) for sct in marcados]) if marcados else np.zeros((0, 2))
+    pos = separar(origen, diametro=15 * 110 / 72 * 1.15)
+    datos = ax.transData.inverted()
     marcas = {}
-    for sct in marcados:
-        x, y = ax.transData.transform((sct["lon"], sct["lat"]))
+    for sct, (x0, y0), (x, y) in zip(marcados, origen, pos):
+        lon, latm = datos.transform((x, y))
+        if math.hypot(x - x0, y - y0) > 3:
+            ax.plot([sct["lon"], lon], [sct["lat"], latm], color="#16181a", lw=1, zorder=4)
+            ax.plot(sct["lon"], sct["lat"], "o", ms=4, mfc="#16181a", mec="white", mew=0.8, zorder=4)
+        ax.plot(lon, latm, "o", ms=15, mfc="#16181a", mec="white", mew=1.5, zorder=5)
+        ax.text(lon, latm, str(sct["n"]), color="white", fontsize=8, fontweight="bold", ha="center", va="center", zorder=6)
+        # Posición en % de la imagen, para el enlace clicable de la web
         marcas[sct["n"]] = [round(x / ancho_px * 100, 2), round((1 - y / alto_px) * 100, 2)]
+    ax.set_xlim(ext[0], ext[1]); ax.set_ylim(ext[2], ext[3])
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=110, facecolor="white")
     Image.open(buf).convert("RGB").save(f"{OUT}/{slug}.webp", "WEBP", quality=82, method=6)  # luego se convierte a WebP
