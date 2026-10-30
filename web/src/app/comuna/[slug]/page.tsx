@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CITAS, comuna, resumen, type Franja, type Fuego } from "@/lib/datos";
+import { CITAS, comuna, resumen, vecinas, type FilaResumen, type Franja, type Fuego } from "@/lib/datos";
 import { ha, haSigno, pct, tasa } from "@/lib/formato";
+import Sectores from "@/components/Sectores";
 
 export const dynamicParams = false;
 
@@ -79,6 +80,31 @@ function Tabla({ a, b, ea, eb }: { a: Franja; b: Franja; ea: string; eb: string 
   );
 }
 
+function TablaVecinas({ filas }: { filas: FilaResumen[] }) {
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-ink text-left">
+          <th className="py-2 font-medium">Comuna</th>
+          <th className="py-2 text-right font-medium">A menos de 500 m, 2022</th>
+          <th className="py-2 text-right font-medium">Puesto nacional</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filas.map((v) => (
+          <tr key={v.slug} className="border-b border-line">
+            <td className="py-2">
+              <Link href={`/comuna/${v.slug}/`} className="text-link underline-offset-2 hover:underline">{v.comuna}</Link>
+            </td>
+            <td className="py-2 text-right tabular-nums">{ha(v.p500_2022)}</td>
+            <td className="py-2 text-right tabular-nums">{v.puesto ?? "-"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 /** Dirección del cambio de la franja de 500 m; bajo 5 % o 10 ha se considera estable. */
 function tendencia(antes: number, despues: number) {
   const d = despues - antes;
@@ -90,6 +116,20 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
   const c = comuna((await params).slug);
   const f22 = c.col1["2022"];
   const sinFranja = f22.plantacion_500m_ha < 1 && c.col2["2024"].plantacion_500m_ha < 1;
+  const sinPlantacion = f22.plantacion_ha < 1;
+
+  const r = resumen();
+  const regionFilas = r.comunas
+    .filter((x) => x.region === c.region && x.puesto !== null)
+    .sort((a, b) => (a.puesto as number) - (b.puesto as number));
+  const puestoRegion = c.puesto !== null ? regionFilas.findIndex((x) => x.slug === c.slug) + 1 : null;
+
+  const vecinosFilas = vecinas(c.slug)
+    .map((s) => r.comunas.find((x) => x.slug === s))
+    .filter((x): x is FilaResumen => !!x);
+  const vecinosConFranja = vecinosFilas.filter((v) => v.puesto !== null);
+  const top3Region = regionFilas.filter((x) => x.slug !== c.slug).slice(0, 3);
+
   const fu = c.fuego_col1;
   const tp = fu ? tasa(fu.plantacion_quemada_ha, fu.plantacion_ha) : 0;
   const tn = fu ? tasa(fu.natural_quemada_ha, fu.natural_ha) : 0;
@@ -107,11 +147,26 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
       </header>
 
       {sinFranja ? (
-        <section className="max-w-3xl">
+        <section className="max-w-3xl space-y-4">
           <p>
-            Según MapBiomas Chile, en {c.comuna} no hay plantación forestal a menos de 500 m de una zona poblada, ni en 2022
-            (Colección 1) ni en 2024 (Colección 2).
+            {sinPlantacion
+              ? `En ${c.comuna} no hay plantación forestal según MapBiomas Chile, por eso no hay franja de plantación junto a zonas pobladas.`
+              : `En ${c.comuna} hay ${ha(f22.plantacion_ha)} de plantación forestal, pero ninguna está a menos de 500 m de una zona poblada.`}
           </p>
+          {vecinosConFranja.length > 0 ? (
+            <div className="space-y-2">
+              <p>Estas comunas vecinas sí tienen plantación forestal junto a zonas pobladas.</p>
+              <TablaVecinas filas={vecinosConFranja} />
+            </div>
+          ) : top3Region.length > 0 ? (
+            <div className="space-y-2">
+              <p>
+                Ninguna comuna vecina tiene plantación forestal junto a zonas pobladas. Estas son las tres con más franja en la
+                Región de {c.region}.
+              </p>
+              <TablaVecinas filas={top3Region} />
+            </div>
+          ) : null}
         </section>
       ) : (
         <>
@@ -121,7 +176,10 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
               <p className="max-w-3xl text-lg">
                 En 2022, {c.comuna} tenía {ha(f22.plantacion_500m_ha)} de plantación forestal a menos de 500 m de una zona poblada
                 y {ha(f22.plantacion_100m_ha)} a menos de 100 m.
-                {c.puesto ? ` Es la comuna número ${c.puesto} de ${c.puesto_de} en el país por la franja de 500 m.` : ""} De toda
+                {c.puesto
+                  ? ` Es la comuna número ${c.puesto} de ${c.puesto_de} en el país por la franja de 500 m, y la número ${puestoRegion} de ${regionFilas.length} en la Región de ${c.region}.`
+                  : ""}{" "}
+                De toda
                 su plantación ({ha(f22.plantacion_ha)}), el {pct(tasa(f22.plantacion_500m_ha, f22.plantacion_ha))} queda dentro
                 de esa franja.
               </p>
@@ -144,9 +202,26 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
                     {texto}
                   </span>
                 ))}
-                <span>Las zonas más oscuras se quemaron entre 2023 y 2025. La línea negra es el límite comunal. Cobertura 2022, Colección 1.</span>
+                <span>Las zonas más oscuras se quemaron entre 2023 y 2025. La línea negra es el límite comunal. Los números marcan los sectores de la tabla. Cobertura 2022, Colección 1.</span>
               </figcaption>
             </figure>
+
+            {c.sectores.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold tracking-tight">Sectores con plantación junto a las casas</h3>
+                <p className="max-w-3xl">
+                  {c.sectores.length === 1
+                    ? "Un tramo del borde de las zonas pobladas tiene plantación forestal a menos de 100 m."
+                    : `${c.sectores.length} tramos del borde de las zonas pobladas tienen plantación forestal a menos de 100 m.`}{" "}
+                  Están ordenados por hectáreas de plantación, y los diez primeros aparecen numerados en el mapa. El nombre es el del
+                  barrio, población o localidad más cercana según OpenStreetMap.
+                  {c.sectores.reduce((a, x) => a + x.plantacion_100m_ha, 0) > f22.plantacion_100m_ha + 1
+                    ? " Parte de la plantación de estos sectores está al otro lado del límite comunal, en una comuna vecina, por eso la suma de la tabla puede superar la cifra comunal."
+                    : ""}
+                </p>
+                <Sectores sectores={c.sectores} conFuego={c.fuego_cubierta} />
+              </div>
+            )}
 
             <div className="grid gap-8 lg:grid-cols-2">
               <div>
@@ -160,7 +235,7 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
             </div>
             <p className="max-w-3xl text-sm text-muted">
               {t1 === t2
-                ? `Las dos colecciones coinciden: la franja de 500 m ${t1 === "estable" ? "se mantuvo estable" : t1} desde el año 2000.`
+                ? `Las dos colecciones coinciden en que la franja de 500 m ${t1 === "estable" ? "se mantuvo estable" : t1} desde el año 2000.`
                 : `Las dos colecciones no coinciden en la tendencia (según la Colección 1 la franja de 500 m ${t1 === "estable" ? "se mantuvo estable" : t1}, según la Colección 2 ${t2 === "estable" ? "se mantuvo estable" : t2}), así que la evolución en esta comuna es incierta.`}{" "}
               Las colecciones clasifican de forma distinta la plantación y la infraestructura, por eso las hectáreas no son iguales.
             </p>
@@ -177,7 +252,7 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
                   {pct(tn)} de la vegetación natural.{" "}
                   {tp > tn
                     ? "Aquí la plantación cercana a las casas se quemó en mayor proporción, como pasó en la mayoría de las comunas con incendios."
-                    : "Aquí pasó lo contrario que en la mayoría de las comunas con incendios: la vegetación natural se quemó en mayor proporción que la plantación."}
+                    : "Aquí pasó lo contrario que en la mayoría de las comunas con incendios. La vegetación natural se quemó en mayor proporción que la plantación."}
                 </p>
                 <Barras f={fu} />
                 <p className="text-sm text-muted">
@@ -218,6 +293,13 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
         </p>
       </section>
 
+      {vecinosFilas.length > 0 && (
+        <section aria-labelledby="vecinas" className="max-w-3xl space-y-3">
+          <h2 id="vecinas" className="text-2xl font-semibold tracking-tight">Comunas vecinas</h2>
+          <TablaVecinas filas={vecinosFilas} />
+        </section>
+      )}
+
       <footer className="space-y-2 border-t border-line pt-6 text-sm text-muted">
         <p>
           <a href="/datos/limite-vivo-comunas.csv" download className="text-link underline">Datos de todas las comunas (CSV)</a>
@@ -232,3 +314,4 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
     </article>
   );
 }
+

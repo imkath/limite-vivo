@@ -72,6 +72,11 @@ def dibujar(args):
     ax = fig.add_axes([0, 0, 1, 1])
     ax.imshow(img, extent=ext, interpolation="nearest")
     gpd.GeoSeries([geom]).boundary.plot(ax=ax, color="#1b1f1d", lw=0.9)
+    # Marcadores numerados de los 10 sectores con más plantación a menos de 100 m (mismo orden que la ficha)
+    for sct in json.load(open(f"web/public/datos/comunas/{slug}.json"))["sectores"][:10]:
+        ax.plot(sct["lon"], sct["lat"], "o", ms=15, mfc="#16181a", mec="white", mew=1.5, zorder=5)
+        ax.text(sct["lon"], sct["lat"], str(sct["n"]), color="white", fontsize=8, fontweight="bold",
+                ha="center", va="center", zorder=6)
     ax.set_xlim(ext[0], ext[1]); ax.set_ylim(ext[2], ext[3])
     ax.set_aspect(1 / math.cos(math.radians(lat)))
     ax.axis("off")

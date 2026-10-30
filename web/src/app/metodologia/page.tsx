@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CITAS, resumen } from "@/lib/datos";
+import { ha } from "@/lib/formato";
 
 export const metadata: Metadata = {
   title: "Metodología",
@@ -102,6 +103,20 @@ export default function Metodologia() {
             una zona poblada. El área de cada píxel depende de su latitud.
           </li>
           <li>Comparación en el tiempo. El cálculo se repite para cada año disponible en cada colección.</li>
+          <li>
+            Sectores. Con la cobertura de 2022 (Colección 1) se marca el borde de cada zona poblada que tiene plantación a menos
+            de 100 m. Los tramos de borde expuesto que quedan a menos de unos 90 m entre sí se unen, y luego se cortan en celdas
+            de 0,01° (cerca de 1 km) para que cada sector sea un trozo de borde que se pueda recorrer. Cada píxel de plantación a
+            menos de 100 m se asigna al punto de zona poblada más cercano, y así se suman las hectáreas de cada sector. El largo
+            del borde es aproximado, porque se cuenta en píxeles de 30 m. Un sector puede incluir plantación ubicada en una comuna
+            vecina, porque lo que importa es el borde donde vive la gente.
+          </li>
+          <li>
+            Nombres de los sectores. Cada sector toma el nombre del lugar más cercano registrado en{" "}
+            <A href="https://www.openstreetmap.org/copyright">OpenStreetMap</A> (barrio, población, villa o localidad; ©
+            colaboradores de OpenStreetMap, licencia ODbL). Si ese lugar está a más de 500 m se indica la distancia, y si está a
+            más de 2 km el sector se identifica solo por sus coordenadas. Es una referencia para ubicarse, no un límite oficial.
+          </li>
         </ol>
       </section>
 
@@ -125,6 +140,13 @@ export default function Metodologia() {
           <li>
             Hay pruebas automáticas para el filtro de zonas pobladas (un camino de 1 o 2 píxeles se elimina, una ciudad con un
             camino conserva la ciudad) y para el cálculo de Mantel-Haenszel. Las comunas sin plantación, como Macul, dan cero.
+          </li>
+          <li>
+            La suma de la plantación de los {r.sectores_total.toLocaleString("es-CL")} sectores ({ha(r.sectores_suma_100m_ha)}) difiere en{" "}
+            {nf.format(Math.abs(r.sectores_suma_100m_ha / r.nacional.col1["2022"].plantacion_100m_ha - 1) * 100)} % de la cifra
+            nacional a menos de 100 m ({ha(r.nacional.col1["2022"].plantacion_100m_ha)}), porque se descartan tramos muy cortos y porque parte de la plantación se asigna a bordes de comunas
+            vecinas. Ninguna comuna con 5 ha o más a menos de 100 m queda sin sectores, y la ubicación de los sectores se revisó
+            sobre mapas de control en Tomé, Viña del Mar y Cabrero.
           </li>
           <li>
             Revisando mapas de control de Viña del Mar, Santa Juana y Tomé se detectó que la infraestructura incluía carreteras, lo

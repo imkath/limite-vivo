@@ -1,8 +1,10 @@
 import Link from "next/link";
 import Buscador from "@/components/Buscador";
+import MapaComunas from "@/components/MapaComunas";
 import Ranking from "@/components/Ranking";
-import { resumen } from "@/lib/datos";
-import { ha, pctSigno } from "@/lib/formato";
+import { nombreSector } from "@/lib/sectores";
+import { mapa, resumen } from "@/lib/datos";
+import { ha, pct, pctSigno } from "@/lib/formato";
 
 const nf2 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const DIST = [
@@ -13,6 +15,10 @@ const DIST = [
 
 export default function Inicio() {
   const r = resumen();
+  const m = mapa();
+  const enMapa = new Set(m.comunas.map((x) => x.slug));
+  const total500 = r.comunas.reduce((a, c) => a + c.p500_2022, 0);
+  const pctMapa = (r.comunas.filter((c) => enMapa.has(c.slug)).reduce((a, c) => a + c.p500_2022, 0) / total500) * 100;
   const c1 = r.nacional.col1;
   const c2 = r.nacional.col2;
   const v1 = r.validacion.col1.natural;
@@ -98,7 +104,47 @@ export default function Inicio() {
           Ordenadas por hectáreas de plantación forestal a menos de 500 m de una zona poblada en 2022 (Colección 1). Cada comuna
           tiene una ficha con su mapa, el detalle por distancia y lo que pasó en los incendios.
         </p>
+        <p className="max-w-3xl text-sm text-muted">
+          El mapa cubre las regiones entre Valparaíso y Los Lagos, donde está el {pct(pctMapa)} de esa plantación. El resto del país
+          está en la tabla, debajo del mapa.
+        </p>
+        <MapaComunas mapa={m} filas={r.comunas} />
         <Ranking filas={r.comunas} />
+      </section>
+
+      <section aria-labelledby="sectores" className="space-y-4">
+        <h2 id="sectores" className="text-2xl font-semibold tracking-tight">Los bordes con más plantación junto a las casas</h2>
+        <p className="max-w-3xl">
+          Una comuna grande puede tener la plantación concentrada en unos pocos bordes. Por eso Límite Vivo divide el borde de cada
+          zona poblada en sectores de alrededor de 1 km y mide cuánta plantación tiene cada uno a menos de 100 m. En todo el país hay{" "}
+          {r.sectores_total.toLocaleString("es-CL")} sectores así. Estos son los 25 con más plantación; el resto está en la ficha de
+          cada comuna.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] text-sm">
+            <thead>
+              <tr className="border-b border-ink text-left">
+                <th className="py-2 pr-2 font-medium">Sector</th>
+                <th className="py-2 pr-2 font-medium">Comuna</th>
+                <th className="py-2 pr-2 text-right font-medium">Plantación a menos de 100 m</th>
+                <th className="py-2 pr-2 text-right font-medium">Borde expuesto (aprox.)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.sectores_top.map((s) => (
+                <tr key={`${s.slug}-${s.n}`} className="border-b border-line">
+                  <td className="py-2 pr-2">{nombreSector(s)}</td>
+                  <td className="py-2 pr-2">
+                    <Link href={`/comuna/${s.slug}/`} className="text-link underline-offset-2 hover:underline">{s.comuna}</Link>
+                    <span className="text-muted">, sector {s.n}</span>
+                  </td>
+                  <td className="py-2 pr-2 text-right">{ha(s.plantacion_100m_ha)}</td>
+                  <td className="py-2 pr-2 text-right">{(Math.round(s.borde_m / 10) * 10).toLocaleString("es-CL")} m</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section aria-labelledby="usos" className="max-w-3xl space-y-3">

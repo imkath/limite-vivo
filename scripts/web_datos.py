@@ -47,6 +47,15 @@ def fuego(f):
             "agricola_ha": r1(f["a"]), "agricola_quemada_ha": r1(f["aq"])}
 
 
+# Sectores expuestos (scripts/sectores.py), agrupados por comuna y numerados por hectáreas de plantación
+sect_por_comuna = {}
+for sct in json.load(open("out/sectores.json")):
+    sect_por_comuna.setdefault(norm(sct["comuna"]), []).append(sct)
+for lista in sect_por_comuna.values():
+    lista.sort(key=lambda x: -x["plantacion_100m_ha"])
+    for i, sct in enumerate(lista):
+        sct["n"] = i + 1
+
 filas = []
 for fid, v in c1.items():
     k = norm(v["comuna"])
@@ -62,6 +71,8 @@ for fid, v in c1.items():
         "fuego_col2": fuego(val2.get(k)) if v["region"] in REGIONES_FUEGO else None,
         "fuego_cubierta": v["region"] in REGIONES_FUEGO,
         "quemado_2023_2025_ha": r1((v.get("fuego") or {}).get("quemado_ha", 0)),
+        "sectores": [{campo: sct[campo] for campo in ("n", "lat", "lon", "borde_m", "plantacion_100m_ha", "quemada_ha", "lugar", "lugar_m")}
+                     for sct in sect_por_comuna.get(norm(v["comuna"]), [])],
         "serie_col2": {"anios": serie["anios"], "plantacion": [r1(x) for x in serie["grupos"].get("plantacion", [0] * len(serie["anios"]))],
                        "urbano": [r1(x) for x in serie["grupos"].get("urbano", [0] * len(serie["anios"]))]},
     }
@@ -98,8 +109,16 @@ resumen = {
     "comunas": [{"slug": f["slug"], "comuna": f["comuna"], "region": f["region"], "puesto": f["puesto"],
                  "p500_2000": f["col1"]["2000"]["plantacion_500m_ha"], "p500_2022": f["col1"]["2022"]["plantacion_500m_ha"],
                  "p100_2022": f["col1"]["2022"]["plantacion_100m_ha"], "p500_2024_c2": f["col2"]["2024"]["plantacion_500m_ha"],
-                 "fuego": f["fuego_col1"] is not None} for f in orden],
+                 "fuego": f["fuego_col1"] is not None,
+                 "sectores_n": len(f["sectores"]),
+                 "sectores_top3": [{campo: sct[campo] for campo in ("n", "lat", "lon", "borde_m", "plantacion_100m_ha", "quemada_ha", "lugar", "lugar_m")}
+                                   for sct in f["sectores"][:3]]} for f in orden],
 }
+# Sectores con más plantación junto a zonas pobladas en todo el país
+todos = sorted(((f, sct) for f in filas for sct in f["sectores"]), key=lambda x: -x[1]["plantacion_100m_ha"])
+resumen["sectores_total"] = len(todos)
+resumen["sectores_suma_100m_ha"] = round(sum(sct["plantacion_100m_ha"] for _, sct in todos))
+resumen["sectores_top"] = [{"slug": f["slug"], "comuna": f["comuna"], "region": f["region"], **sct} for f, sct in todos[:25]]
 json.dump(resumen, open(OUT / "resumen.json", "w"), ensure_ascii=False)
 
 with open(OUT / "limite-vivo-comunas.csv", "w", newline="", encoding="utf-8-sig") as fh:

@@ -33,6 +33,20 @@ input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 
+.mapa-svg a path {
+  stroke: transparent;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 0.1s ease;
+}
+.mapa-svg a:hover path,
+.mapa-svg a:focus-visible path {
+  stroke: var(--ink);
+}
+.mapa-svg a:focus-visible {
+  outline: none;
+}
+
 @media print {
   .no-print { display: none !important; }
   body { font-size: 11pt; }
