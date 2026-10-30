@@ -22,7 +22,12 @@ export default function Sectores({ sectores, conFuego }: { sectores: Sector[]; c
               <th className="py-2 pr-2 font-medium">Sector</th>
               <th className="hidden py-2 pr-2 text-right font-medium sm:table-cell">Borde expuesto (aprox.)</th>
               <th className="py-2 pr-2 text-right font-medium">Plantación a menos de 100 m</th>
-              {conFuego && <th className="py-2 pr-2 text-right font-medium">Plantación quemada 2023-2025</th>}
+              {conFuego && <th className="hidden py-2 pr-2 text-right font-medium sm:table-cell">Plantación quemada 2023-2025</th>}
+              {conFuego && (
+                <th className="py-2 pr-2 text-right font-medium">
+                  Franja quemada 2013-2025<span className="sr-only"> (franja de 100 m, cualquier cobertura)</span>
+                </th>
+              )}
               <th className="py-2 text-right font-medium">Mapa</th>
             </tr>
           </thead>
@@ -42,8 +47,22 @@ export default function Sectores({ sectores, conFuego }: { sectores: Sector[]; c
                 <td className="hidden py-2 pr-2 text-right sm:table-cell">{nf0.format(Math.round(s.borde_m / 10) * 10)} m</td>
                 <td className="py-2 pr-2 text-right">{s.plantacion_100m_ha < 1 ? "menos de 1 ha" : ha(s.plantacion_100m_ha)}</td>
                 {conFuego && (
-                  <td className="py-2 pr-2 text-right">
+                  <td className="hidden py-2 pr-2 text-right sm:table-cell">
                     {s.quemada_ha === null ? "sin dato" : s.quemada_ha < 0.5 ? "0 ha" : ha(s.quemada_ha)}
+                  </td>
+                )}
+                {conFuego && (
+                  <td className="py-2 pr-2 text-right">
+                    {s.franja_quemada_2013_2025_ha === null
+                      ? "sin dato"
+                      : s.franja_quemada_2013_2025_ha < 0.5
+                        ? "0 ha"
+                        : ha(s.franja_quemada_2013_2025_ha)}
+                    {(s.franja_reincidente_2013_2025_ha ?? 0) >= 0.5 && (
+                      <span className="block text-xs text-muted">
+                        {ha(s.franja_reincidente_2013_2025_ha as number)} dos o más veces
+                      </span>
+                    )}
                   </td>
                 )}
                 <td className="whitespace-nowrap py-2 text-right">

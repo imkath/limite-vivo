@@ -15,6 +15,10 @@ export type Sector = {
   borde_m: number;
   plantacion_100m_ha: number;
   quemada_ha: number | null;
+  /** Superficie de la franja de 100 m del sector quemada al menos una vez entre 2013 y 2025 (null sin datos de Fuego) */
+  franja_quemada_2013_2025_ha: number | null;
+  /** La misma franja, quemada dos o más veces entre 2013 y 2025 */
+  franja_reincidente_2013_2025_ha: number | null;
   lugar: string;
   lugar_m: number;
   /** Posición del marcador numerado en la imagen del mapa, en % del ancho y del alto */
@@ -29,6 +33,23 @@ export type Fuego = {
   agricola_ha: number;
   agricola_quemada_ha: number;
 };
+/** De dónde viene la plantación que está junto a las zonas pobladas al final del período (scripts/crecimiento.py). */
+export type Origen = {
+  final_ha: number;
+  ya_estaba_ha: number;
+  llego_ciudad_ha: number;
+  plantacion_nueva_ha: number;
+  inicial_ha: number;
+  salio_ha: number;
+  poblado_nuevo_junto_a_plantacion_ha: number;
+};
+export type Crecimiento = Record<"100m" | "500m", Origen>;
+/** Personas en manzanas del Censo 2024 según su distancia a la plantación (scripts/poblacion.py). */
+export type GrupoPoblacion = { personas: number; viviendas: number; ninos_0_13: number; mayores_60: number; dificultad_mover: number };
+export type Poblacion = Record<"100m" | "500m" | "total", GrupoPoblacion> & {
+  /** Personas contando solo las manzanas cuyo punto interior está dentro de la distancia (criterio estricto) */
+  centro: Record<"100m" | "500m", number>;
+};
 export type Comuna = {
   slug: string;
   comuna: string;
@@ -41,6 +62,8 @@ export type Comuna = {
   fuego_col2: Fuego | null;
   fuego_cubierta: boolean;
   sectores: Sector[];
+  crecimiento: Crecimiento;
+  poblacion: Poblacion | null;
   mapa_px?: [number, number];
   quemado_2023_2025_ha: number;
   serie_col2: { anios: number[]; plantacion: number[]; urbano: number[] };
@@ -52,6 +75,9 @@ export type Vecinas = Record<string, string[]>;
 export type Validacion = { rr: number; ic95: [number, number]; comunas_mayor: number; comunas: number };
 export type FilaResumen = {
   slug: string;
+  personas_100m?: number;
+  personas_500m?: number;
+  llego_ciudad_100m?: number;
   comuna: string;
   region: string;
   puesto: number | null;
@@ -72,6 +98,11 @@ export type Resumen = {
   sectores_total: number;
   sectores_suma_100m_ha: number;
   sectores_top: (Sector & { slug: string; comuna: string; region: string })[];
+  sectores_historial: { con_dato: number; quemados: number; reincidentes: number };
+  crecimiento: Record<"col1_2022" | "col2_2022" | "col2_2024", Crecimiento>;
+  poblacion: Poblacion;
+  top_personas: (GrupoPoblacion & { slug: string; comuna: string; region: string; personas_500m: number; personas_total: number })[];
+  top_llego_ciudad: (Origen & { slug: string; comuna: string; region: string })[];
 };
 
 const DIR = path.join(process.cwd(), "public", "datos");
@@ -86,7 +117,8 @@ export const vecinas = (slug: string): string[] => leer<Vecinas>("vecinas.json")
 export const CITAS = [
   "MapBiomas – Colección 1 de la Serie Anual de Mapas de Cobertura y Uso del Suelo de Chile, consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
   "MapBiomas – Colección 2 de la Serie Anual de Mapas de Cobertura y Uso del Suelo de Chile, consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
-  "MapBiomas – Colección 1 de MapBiomas Fuego Chile (área quemada anual), consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
+  "MapBiomas – Colección 1 de MapBiomas Fuego Chile (área quemada anual y frecuencia de quema), consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
+  "Instituto Nacional de Estadísticas (INE) – Cartografía del Censo de Población y Vivienda 2024, manzanas, consultada el 30/10/2026 en https://censo2024.ine.gob.cl/resultados/",
 ];
 
 

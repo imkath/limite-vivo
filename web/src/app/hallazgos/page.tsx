@@ -4,8 +4,9 @@ import Link from "next/link";
 import { nombreSector } from "@/lib/sectores";
 import { VISOR_CONAF } from "@/lib/enlaces";
 import { CONJUNTO_DE_DATOS, JsonLd } from "@/components/DatosEstructurados";
-import { resumen } from "@/lib/datos";
-import { ha, pctSigno } from "@/lib/formato";
+import { resumen, type Origen as Partes } from "@/lib/datos";
+import { entero, ha, pct, pctSigno, tasa } from "@/lib/formato";
+import Origen from "@/components/Origen";
 
 export const metadata: Metadata = {
   title: "Hallazgos",
@@ -28,6 +29,21 @@ export default function Hallazgos() {
   const v2 = r.validacion.col2.natural;
   const crec = (a: number, b: number) => ((b - a) / a) * 100;
   const conFranja = r.comunas.filter((c) => c.puesto !== null).length;
+
+  // Rango de cada parte del origen entre colecciones (C1 2000-2022, C2 2000-2022) y distancias (100 y 500 m)
+  const casos: Partes[] = [r.crecimiento.col1_2022["100m"], r.crecimiento.col1_2022["500m"], r.crecimiento.col2_2022["100m"], r.crecimiento.col2_2022["500m"]];
+  const parte = (k: "ya_estaba_ha" | "llego_ciudad_ha" | "plantacion_nueva_ha") =>
+    casos.map((o) => tasa(o[k], o.ya_estaba_ha + o.llego_ciudad_ha + o.plantacion_nueva_ha));
+  const rango = (v: number[]) => `entre el ${pct(Math.min(...v)).replace("\u00a0%", "")} y el ${pct(Math.max(...v))}`;
+  const o1 = r.crecimiento.col1_2022["100m"];
+  const po = r.poblacion;
+  const ORIGENES = [
+    ["Colección 1, 2000-2022, a menos de 100 m", r.crecimiento.col1_2022["100m"]],
+    ["Colección 1, 2000-2022, a menos de 500 m", r.crecimiento.col1_2022["500m"]],
+    ["Colección 2, 2000-2022, a menos de 100 m", r.crecimiento.col2_2022["100m"]],
+    ["Colección 2, 2000-2022, a menos de 500 m", r.crecimiento.col2_2022["500m"]],
+    ["Colección 2, 2000-2024, a menos de 100 m", r.crecimiento.col2_2024["100m"]],
+  ] as const;
 
   return (
     <div className="space-y-16">
@@ -88,6 +104,104 @@ export default function Hallazgos() {
         </p>
       </section>
 
+      <section aria-labelledby="origen" className="space-y-4">
+        <h2 id="origen" className="text-2xl font-semibold tracking-tight">Quién se acercó a quién</h2>
+        <p className="max-w-3xl">
+          La franja creció por dos caminos que se deciden en lugares distintos. Uno es la ciudad que se extiende hasta plantaciones
+          que ya existían, algo que pasa por el Plan Regulador y los permisos de loteo. El otro es la plantación nueva junto a las
+          casas, que depende de dónde se planta. Límite Vivo separa los dos, píxel a píxel, comparando 2000 con 2022.
+        </p>
+        <p className="max-w-3xl">
+          Según la Colección 1, de las {ha(o1.final_ha)} de plantación que en 2022 estaban a menos de 100 m de una zona poblada,{" "}
+          {ha(o1.ya_estaba_ha)} ya estaban ahí en 2000, {ha(o1.llego_ciudad_ha)} ya existían más lejos y la ciudad creció hasta
+          ellas, y {ha(o1.plantacion_nueva_ha)} se plantaron después de 2005.
+        </p>
+        <Origen o={o1} distancia="100 m" />
+        <p className="max-w-3xl">
+          Las dos colecciones no dan las mismas proporciones. Según la colección y la distancia, {rango(parte("llego_ciudad_ha"))}{" "}
+          de la plantación junto a las casas es plantación que ya existía y a la que llegó la ciudad, y{" "}
+          {rango(parte("plantacion_nueva_ha"))} se plantó después de 2005. En las dos, ambos caminos pesan; ninguno explica la
+          franja por sí solo.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] max-w-3xl text-sm">
+            <caption className="mb-2 text-left text-muted">Origen de la plantación junto a zonas pobladas, en hectáreas</caption>
+            <thead>
+              <tr className="border-b border-ink text-left">
+                <th className="py-2 pr-2 font-medium">Caso</th>
+                <th className="py-2 pr-2 text-right font-medium">Ya estaba</th>
+                <th className="py-2 pr-2 text-right font-medium">Llegó la ciudad</th>
+                <th className="py-2 text-right font-medium">Plantación nueva</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ORIGENES.map(([t, o]) => (
+                <tr key={t} className="border-b border-line">
+                  <td className="py-2 pr-2">{t}</td>
+                  <td className="py-2 pr-2 text-right">{ha(o.ya_estaba_ha)}</td>
+                  <td className="py-2 pr-2 text-right">{ha(o.llego_ciudad_ha)}</td>
+                  <td className="py-2 text-right">{ha(o.plantacion_nueva_ha)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="max-w-3xl text-sm text-muted">
+          Una plantación se considera existente si aparece como plantación en algún año entre 2000 y 2005, para no confundir la
+          cosecha y la replantación con plantación nueva. Hernández y otros (2024) midieron con MapBiomas el crecimiento de la
+          infraestructura urbana de Chile entre 2000 y 2022; aquí se mide ese crecimiento en relación con la plantación y por
+          comuna.
+        </p>
+      </section>
+
+      <section aria-labelledby="personas" className="space-y-4">
+        <h2 id="personas" className="text-2xl font-semibold tracking-tight">Personas que viven al lado</h2>
+        <p className="max-w-3xl">
+          Con las manzanas del Censo 2024, {entero(po["100m"].personas)} personas viven en manzanas que llegan a menos de 100 m de
+          plantación forestal, en {entero(po["100m"].viviendas)} viviendas ocupadas. Si se cuentan solo las manzanas cuyo centro
+          está a menos de 100 m, son {entero(po.centro["100m"])}. La cifra real de personas que viven a menos de una cuadra de una
+          plantación está entre esos dos valores. A menos de 500 m, el rango va de {entero(po.centro["500m"])} a{" "}
+          {entero(po["500m"].personas)}. En esas manzanas que llegan a menos de 100 m hay {entero(po["100m"].ninos_0_13)} niñas y niños de 0 a 13 años,{" "}
+          {entero(po["100m"].mayores_60)} personas de 60 años o más y {entero(po["100m"].dificultad_mover)} personas que no pueden
+          caminar o subir escaleras, o lo hacen con mucha dificultad.
+        </p>
+        <p className="max-w-3xl">
+          Sarricolea y otros (2020) estimaron que cerca de 3 millones de personas viven en la interfaz urbano-forestal entre
+          Valparaíso y La Araucanía, considerando toda la vegetación que puede quemarse. La cifra de Límite Vivo es más acotada a
+          propósito: solo plantación forestal, para todo el país y comuna por comuna.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] max-w-3xl text-sm">
+            <caption className="mb-2 text-left text-muted">Las 15 comunas con más personas a menos de 100 m de plantación forestal</caption>
+            <thead>
+              <tr className="border-b border-ink text-left">
+                <th className="py-2 pr-2 font-medium">Comuna</th>
+                <th className="py-2 pr-2 text-right font-medium">Manzanas que llegan a menos de 100 m</th>
+                <th className="py-2 pr-2 text-right font-medium">A menos de 500 m</th>
+                <th className="py-2 text-right font-medium">De quienes viven en manzanas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.top_personas.map((x) => (
+                <tr key={x.slug} className="border-b border-line">
+                  <td className="py-2 pr-2">
+                    <Link href={`/comuna/${x.slug}/#personas`} className="text-link underline-offset-2 hover:underline">{x.comuna}</Link>
+                  </td>
+                  <td className="py-2 pr-2 text-right">{entero(x.personas)}</td>
+                  <td className="py-2 pr-2 text-right">{entero(x.personas_500m)}</td>
+                  <td className="py-2 text-right">{pct(tasa(x.personas, x.personas_total))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="max-w-3xl text-sm text-muted">
+          Se cuentan las manzanas urbanas y de aldeas del Censo 2024, que reúnen al 89 % de la población; quedan fuera las
+          viviendas rurales dispersas, que sumarían personas. La tabla usa el criterio amplio (manzanas que llegan a menos de 100
+          m). Plantación de 2022 (Colección 1).
+        </p>
+      </section>
+
       <section aria-labelledby="incendios" className="max-w-3xl space-y-4">
         <h2 id="incendios" className="text-2xl font-semibold tracking-tight">Qué pasó en los incendios de 2023 a 2025</h2>
         <p>
@@ -112,6 +226,12 @@ export default function Hallazgos() {
           zona poblada en sectores de alrededor de 1 km y mide cuánta plantación tiene cada uno a menos de 100 m. En todo el país hay{" "}
           {r.sectores_total.toLocaleString("es-CL")} sectores así. Estos son los 25 con más plantación; el resto está en la ficha de
           cada comuna.
+        </p>
+        <p className="max-w-3xl">
+          Donde hay datos de MapBiomas Fuego, la ficha también dice cuánto de la franja de 100 m de cada sector se quemó entre
+          2013 y 2025. De {r.sectores_historial.con_dato.toLocaleString("es-CL")} sectores con datos,{" "}
+          {r.sectores_historial.quemados.toLocaleString("es-CL")} tuvieron al menos media hectárea quemada en ese período y{" "}
+          {r.sectores_historial.reincidentes.toLocaleString("es-CL")} tuvieron media hectárea o más que se quemó dos o más veces.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] text-sm">

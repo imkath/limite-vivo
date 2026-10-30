@@ -53,13 +53,22 @@ export default function Metodologia() {
           <A href={VISOR_CONAF}>visor público</A> de riesgo en las zonas de interfaz. Según su descripción, no separa la
           plantación forestal de la vegetación nativa ni compara años. Hay además mapas de interfaz para todo el país en Schug et al.
           (<A href="https://doi.org/10.1038/s41586-023-06320-0">2023</A>) y Gelabert et al.
-          (<A href="https://doi.org/10.17398/3101-7177.2.133">2026</A>).
+          (<A href="https://doi.org/10.17398/3101-7177.2.133">2026</A>). Sarricolea et al.
+          (<A href="https://doi.org/10.1016/j.scitotenv.2019.135894">2020</A>) estimaron que cerca de 3 millones de personas viven
+          en la interfaz urbano-forestal entre Valparaíso y La Araucanía, con resultados por región, y Hernández et al.
+          (<A href="https://doi.org/10.5194/isprs-archives-XLVIII-3-2024-643-2024">2024</A>) midieron con MapBiomas el crecimiento
+          de la infraestructura urbana del país entre 2000 y 2022. El Ministerio de Educación (
+          <A href="https://emergenciaydesastres.mineduc.cl/visor-comunidades-educativas-ante-amenazas-socionaturales/">visor de
+          comunidades educativas</A>) y SENAPRED (<A href="https://senapred.cl/visor-chile-preparado/">Visor Chile Preparado</A>)
+          ya muestran colegios, jardines y centros de salud sobre la amenaza de incendio de CONAF, así que Límite Vivo no repite
+          esa capa.
         </p>
         <p>
-          En nuestra revisión no encontramos un indicador que, para cada comuna del país y con las series de MapBiomas, cuantifique
-          la plantación forestal a 100, 200 y 500 m de zonas pobladas, la siga desde el año 2000 y la contraste con el área quemada
-          dentro de la misma comuna y la misma franja. Eso es lo que agrega Límite Vivo, como complemento de los trabajos
-          anteriores.
+          En nuestra revisión no encontramos una herramienta pública que, para cada comuna del país y con las series de MapBiomas,
+          cuantifique la plantación forestal a 100, 200 y 500 m de zonas pobladas, la siga desde el año 2000, separe si fue la
+          ciudad la que llegó a la plantación o la plantación la que llegó a la ciudad, cuente a las personas que viven al lado
+          con el Censo 2024 y lo contraste con el área quemada dentro de la misma comuna y la misma franja. Eso es lo que agrega
+          Límite Vivo, como complemento de los trabajos anteriores.
         </p>
         <p>
           Hay además una necesidad práctica. La Ley 21.364 (artículo 28) exige a cada comuna un Plan Comunal para la Reducción del
@@ -74,18 +83,31 @@ export default function Metodologia() {
         <H2>Datos</H2>
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            Cobertura y uso del suelo de MapBiomas Chile, Colección 1, años 2000 y 2022. Son los GeoTIFF anuales de 30 m del
-            almacenamiento público de MapBiomas, y son la base de las cifras principales.
+            Cobertura y uso del suelo de MapBiomas Chile, Colección 1, años 2000 y 2022, y 2000 a 2005 para saber qué plantación
+            ya existía al inicio. Es la base de las cifras principales. Se leyó del asset público de la Colección 1 en Google
+            Earth Engine, en su grilla nativa de 30 m; da exactamente las mismas cifras que los GeoTIFF anuales del almacenamiento
+            público de MapBiomas, que se usaron primero y que el 30 de octubre de 2026 dejaron de estar disponibles para descarga
+            directa.
           </li>
           <li>
             Cobertura y uso del suelo de MapBiomas Chile, Colección 2, años 2000, 2022 y 2024, leída en Google Earth Engine y
             descargada en la misma grilla que la Colección 1. Se usa como análisis de sensibilidad (ver control de calidad).
           </li>
           <li>
-            Área quemada anual de MapBiomas Fuego Chile, Colección 1, años 2023, 2024 y 2025. Cubre de la Región de Valparaíso a
-            la de La Araucanía, así que la comparación con incendios solo se hace en esas regiones.
+            Área quemada anual de MapBiomas Fuego Chile, Colección 1, años 2023, 2024 y 2025, y frecuencia de quema 2013-2025.
+            Cubre de la Región de Valparaíso a la de La Araucanía, así que todo lo relacionado con incendios solo se calcula en
+            esas regiones.
           </li>
-          <li>Límites comunales de MapBiomas Chile (nivel político 4, 343 comunas), los mismos que usa MapBiomas en sus estadísticas.</li>
+          <li>
+            Límites comunales de MapBiomas Chile (nivel político 4, 343 comunas), los mismos que usa MapBiomas en sus estadísticas.
+            Están publicados como ráster en Earth Engine; se vectorizaron y se nombraron cruzándolos con la capa oficial de
+            comunas del MOP (servicio DPA), con la que cada comuna coincide en más del 92 % de su superficie.
+          </li>
+          <li>
+            Cartografía del Censo de Población y Vivienda 2024 (<A href="https://censo2024.ine.gob.cl/resultados/">INE</A>):
+            manzanas urbanas y de aldeas, con personas, viviendas ocupadas, grupos de edad y personas con dificultad para caminar
+            o subir escaleras.
+          </li>
           <li>Estadísticas oficiales por comuna de las Colecciones 1 y 2, para el control de calidad y el contexto de cada ficha.</li>
         </ul>
       </section>
@@ -132,6 +154,26 @@ export default function Metodologia() {
             casas en Chile, la persona puede ajustar el punto en un mapa opcional, que carga sus imágenes desde OpenStreetMap
             solo si se abre.
           </li>
+          <li>
+            Quién se acercó a quién. La plantación que en 2022 está a menos de 100 o 500 m de una zona poblada se separa, píxel a
+            píxel, en tres partes que suman exacto: la que ya estaba junto a las casas en 2000, la que ya existía pero más lejos y
+            quedó cerca porque la zona poblada creció hasta ella, y la que se plantó después. Una plantación se considera
+            existente si aparece como plantación en algún año entre 2000 y 2005; sin esa ventana, un rodal cosechado justo en
+            2000 se contaría como plantación nueva al replantarse. Se calcula con las dos colecciones.
+          </li>
+          <li>
+            Personas. Cada manzana del Censo 2024 se lleva a la grilla de MapBiomas (cada píxel queda con la manzana que contiene
+            su centro; las manzanas más chicas que un píxel se miden en un punto interior) y se mide su distancia mínima al borde
+            de la plantación de 2022. Si alguna parte de la manzana está a menos de 100 o 500 m, cuentan todas sus personas,
+            viviendas y grupos de edad. Como en manzanas grandes eso incluye a quienes viven algo más lejos, se calcula también
+            un criterio estricto, que cuenta la manzana solo si su punto interior está dentro de la distancia, y se informan las
+            dos cifras como rango.
+          </li>
+          <li>
+            Historial de quema de los sectores. Para la franja de 100 m junto a cada sector, cualquiera sea su cobertura, se suma
+            la superficie que se quemó al menos una vez entre 2013 y 2025 y la que se quemó dos o más veces, con la frecuencia de
+            quema de MapBiomas Fuego.
+          </li>
         </ol>
       </section>
 
@@ -166,6 +208,16 @@ export default function Metodologia() {
           <li>
             La distancia guardada en 12 celdas al azar de la búsqueda por dirección se recalculó directamente sobre el ráster,
             con una diferencia máxima de 2 m.
+          </li>
+          <li>
+            En cada comuna, las tres partes de &quot;quién se acercó a quién&quot; suman exactamente la franja del cálculo principal.
+            Hay pruebas automáticas que comprueban la suma, que cada movimiento se reconoce y que un rodal replantado no se cuenta
+            como plantación nueva.
+          </li>
+          <li>
+            Todas las manzanas del censo quedaron medidas. Solo faltan Juan Fernández e Isla de Pascua, que no están entre las 343
+            comunas de MapBiomas. En los sectores, la superficie quemada entre 2013 y 2025 nunca es menor que la plantación quemada
+            entre 2023 y 2025 de la misma franja, como debe ser.
           </li>
           <li>
             Revisando mapas de control de Viña del Mar, Santa Juana y Tomé se detectó que la infraestructura incluía carreteras, lo
@@ -249,6 +301,15 @@ export default function Metodologia() {
           <li>
             Es una asociación, no una relación causal. La plantación podría quemarse más también por dónde está dentro de la
             franja, por ejemplo en laderas.
+          </li>
+          <li>
+            &quot;Quién se acercó a quién&quot; depende de que la clasificación de zonas pobladas y plantación sea comparable entre
+            años. Las dos colecciones dan proporciones distintas, por eso se informa el rango y no una sola cifra.
+          </li>
+          <li>
+            Las personas son las de manzanas urbanas y de aldeas (89 % de la población del país): quedan fuera las viviendas
+            rurales dispersas, que el INE publica en polígonos de referencia estadística. El censo es de 2024 y la plantación de
+            2022, y una manzana cuenta completa aunque solo una parte esté dentro de la distancia.
           </li>
           <li>
             La búsqueda de trabajos previos no fue exhaustiva. Si conoces un trabajo que haga lo mismo, lo citaremos.

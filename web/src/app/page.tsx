@@ -4,7 +4,7 @@ import MapaComunas from "@/components/MapaComunas";
 import { filasBuscador, filasLivianas, mapa, resumen } from "@/lib/datos";
 import { VISOR_CONAF } from "@/lib/enlaces";
 import { JsonLd, SITIO_WEB } from "@/components/DatosEstructurados";
-import { ha, pct } from "@/lib/formato";
+import { entero, ha, pct } from "@/lib/formato";
 
 const nf2 = new Intl.NumberFormat("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -18,6 +18,8 @@ export default function Inicio() {
   const v1 = r.validacion.col1.natural;
   const v2 = r.validacion.col2.natural;
   const [bajo, alto] = [Math.min(v1.rr, v2.rr), Math.max(v1.rr, v2.rr)];
+  const o = r.crecimiento.col1_2022["100m"];
+  const po = r.poblacion;
 
   return (
     <div className="space-y-16">
@@ -48,8 +50,15 @@ export default function Inicio() {
           el matorral y el pastizal de esa misma franja, según la colección de MapBiomas que se use.
         </p>
         <p>
-          Son cifras para discutir con datos las franjas de protección entre plantaciones y viviendas: cuánta plantación
-          quedaría dentro de 100, 200 o 500 m en cada comuna, y cómo ha cambiado desde el año 2000.
+          Según el Censo 2024, entre {entero(po.centro["100m"])} y {entero(po["100m"].personas)} personas viven a menos de 100 m
+          de plantación forestal, según si se mide desde el centro o desde el borde de su manzana.
+          Y la franja no creció por un solo motivo. De la plantación que hoy está a menos de 100 m de las casas, una parte ya
+          existía y fue la ciudad la que llegó hasta ella ({ha(o.llego_ciudad_ha)} según la Colección 1), y otra se plantó
+          después de 2005 ({ha(o.plantacion_nueva_ha)}).
+        </p>
+        <p>
+          Son cifras para discutir con datos las franjas de protección entre plantaciones y viviendas, y para saber, comuna por
+          comuna, si el problema se juega más en el Plan Regulador o en dónde se planta.
         </p>
         <p>
           <Link href="/hallazgos/" className="text-link underline">Ver los hallazgos completos</Link>
@@ -60,10 +69,10 @@ export default function Inicio() {
         <h2 id="aporte" className="text-2xl font-semibold tracking-tight">Qué agrega Límite Vivo</h2>
         <p>
           CONAF publica el mapa oficial de riesgo de incendio en las zonas de interfaz entre ciudades y vegetación, y es la
-          referencia para conocer el riesgo de un lugar. Límite Vivo lo complementa con algo que ese análisis no entrega por
-          separado. Distingue la plantación forestal del bosque nativo y el matorral, compara su extensión en 2000, 2022 y 2024
-          con los mapas de MapBiomas, la contrasta con lo que se quemó entre 2023 y 2025, y deja los datos y el código abiertos
-          para revisarlos.
+          referencia para conocer el riesgo de un lugar. Límite Vivo lo complementa con lo que ese mapa no muestra. Distingue la
+          plantación forestal del bosque nativo y el matorral, compara 2000, 2022 y 2024, separa si fue la ciudad la que llegó a
+          la plantación o la plantación la que llegó a la ciudad, cuenta a las personas que viven al lado con el Censo 2024 y
+          contrasta todo con lo que se quemó. Los datos y el código quedan abiertos para revisarlos.
         </p>
         <p>
           <a href={VISOR_CONAF} target="_blank" rel="noopener noreferrer" className="text-link underline">
@@ -86,7 +95,9 @@ export default function Inicio() {
         <h2 id="usos" className="text-2xl font-semibold tracking-tight">Quién puede usarlo</h2>
         <p>
           Un municipio puede usar su ficha como antecedente en el Plan Comunal para la Reducción del Riesgo de Desastres que exige
-          la Ley 21.364, para decidir dónde partir con cortafuegos y planes de evacuación, y al revisar el Plan Regulador Comunal.
+          la Ley 21.364, para decidir dónde partir con cortafuegos y planes de evacuación (con cuántas personas, niños, mayores y
+          personas con dificultad para moverse viven junto a la plantación), y al revisar el Plan Regulador Comunal, sabiendo
+          cuánto de la franja viene del crecimiento de la propia ciudad.
           Los organismos de emergencia tienen una vista nacional comparable. Y cualquier vecina, junta de vecinos o periodista
           puede ver la cifra de su propia comuna, descargar los datos y revisar cómo se calcularon.
         </p>

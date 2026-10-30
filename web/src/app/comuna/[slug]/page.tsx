@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CITAS, comuna, resumen, vecinas, type FilaResumen, type Franja, type Fuego } from "@/lib/datos";
-import { ha, haSigno, nombreRegion, pct, tasa } from "@/lib/formato";
+import { entero, ha, haSigno, nombreRegion, pct, tasa } from "@/lib/formato";
+import Origen from "@/components/Origen";
 import Sectores from "@/components/Sectores";
 import DescargaCsv from "@/components/DescargaCsv";
 import { VISOR_CONAF } from "@/lib/enlaces";
@@ -142,6 +143,14 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
   const s = c.serie_col2;
   const n = s.anios.length - 1;
 
+  // Origen de la plantación junto a las casas: se usa la franja de 100 m si tiene al menos 1 ha, si no la de 500 m
+  const dOrigen = c.crecimiento["100m"].final_ha >= 1 ? "100m" : "500m";
+  const o = c.crecimiento[dOrigen];
+  const distOrigen = dOrigen === "100m" ? "100 m" : "500 m";
+  const partes = [o.ya_estaba_ha, o.llego_ciudad_ha, o.plantacion_nueva_ha];
+  const mayor = partes.indexOf(Math.max(...partes));
+  const p = c.poblacion;
+
   return (
     <article className="space-y-12">
       <header className="space-y-2">
@@ -249,6 +258,9 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
                   {c.sectores.reduce((a, x) => a + x.plantacion_100m_ha, 0) > f22.plantacion_100m_ha + 1
                     ? " Parte de la plantación de estos sectores está al otro lado del límite comunal, en una comuna vecina, por eso la suma de la tabla puede superar la cifra comunal."
                     : ""}
+                  {c.fuego_cubierta
+                    ? " La última columna suma lo que se quemó al menos una vez entre 2013 y 2025 en la franja de 100 m junto a ese borde, sea plantación, matorral, bosque o pradera; cuando una parte se quemó dos o más veces, se indica debajo."
+                    : ""}
                 </p>
                 <Sectores sectores={c.sectores} conFuego={c.fuego_cubierta} />
               </div>
@@ -271,6 +283,66 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
               Las colecciones clasifican de forma distinta la plantación y la infraestructura, por eso las hectáreas no son iguales.
             </p>
           </section>
+
+          {o.final_ha >= 1 && (
+            <section aria-labelledby="origen" className="space-y-4">
+              <h2 id="origen" className="text-2xl font-semibold tracking-tight">Quién se acercó a quién</h2>
+              <p className="max-w-3xl">
+                De las {ha(o.final_ha)} de plantación forestal que en 2022 estaban a menos de {distOrigen} de una zona poblada,{" "}
+                {ha(o.ya_estaba_ha)} ya estaban ahí en 2000. En {ha(o.llego_ciudad_ha)} la plantación ya existía, pero más lejos, y
+                fue la zona poblada la que creció hasta ella. Las otras {ha(o.plantacion_nueva_ha)} se plantaron después de 2005.
+              </p>
+              <Origen o={o} distancia={distOrigen} />
+              <p className="max-w-3xl">
+                {mayor === 1
+                  ? "En esta comuna pesa más el crecimiento de la ciudad hacia plantaciones que ya existían. Eso se decide en el Plan Regulador Comunal y en los permisos de loteo."
+                  : mayor === 2
+                    ? "En esta comuna pesa más la plantación nueva junto a las casas. Eso depende de dónde se planta y de las franjas de protección que se exijan a los predios forestales."
+                    : "En esta comuna la mayor parte de esa plantación ya estaba junto a las casas en 2000."}
+                {o.poblado_nuevo_junto_a_plantacion_ha >= 1
+                  ? ` Además, ${ha(o.poblado_nuevo_junto_a_plantacion_ha)} de zona poblada que no existían en 2000 quedaron a menos de ${distOrigen} de plantación que ya estaba.`
+                  : ""}
+              </p>
+              <p className="max-w-3xl text-sm text-muted">
+                Colección 1, 2000 y 2022. Se considera que una plantación ya existía si aparece como plantación en algún año entre
+                2000 y 2005, para no confundir la cosecha y la replantación con plantación nueva. Con la Colección 2 las proporciones
+                cambian; el detalle está en la metodología.
+              </p>
+            </section>
+          )}
+
+          {p && (p["500m"].personas > 0 || p["100m"].personas > 0) && (
+            <section aria-labelledby="personas" className="max-w-3xl space-y-3">
+              <h2 id="personas" className="text-2xl font-semibold tracking-tight">Personas que viven al lado</h2>
+              {p["100m"].personas > 0 ? (
+                <p>
+                  Según el Censo 2024, {entero(p["100m"].personas)} personas de {c.comuna} viven en manzanas que llegan a menos de
+                  100 m de plantación forestal, en {entero(p["100m"].viviendas)} viviendas ocupadas. Son el{" "}
+                  {pct(tasa(p["100m"].personas, p.total.personas))} de quienes viven en manzanas de la comuna. Si se cuentan solo las
+                  manzanas cuyo centro está a menos de 100 m, son {entero(p.centro["100m"])}. En manzanas que llegan a menos de 500 m
+                  viven {entero(p["500m"].personas)} personas.
+                </p>
+              ) : (
+                <p>
+                  Según el Censo 2024, ninguna manzana de {c.comuna} llega a menos de 100 m de plantación forestal, y{" "}
+                  {entero(p["500m"].personas)} personas viven en manzanas que llegan a menos de 500 m.
+                </p>
+              )}
+              {p["100m"].personas > 0 && (
+                <p>
+                  Entre quienes viven a menos de 100 m hay {entero(p["100m"].ninos_0_13)} niñas y niños de 0 a 13 años,{" "}
+                  {entero(p["100m"].mayores_60)} personas de 60 años o más y {entero(p["100m"].dificultad_mover)} personas que no
+                  pueden caminar o subir escaleras, o lo hacen con mucha dificultad. Son datos para planificar una evacuación.
+                </p>
+              )}
+              <p className="text-sm text-muted">
+                Manzanas urbanas y de aldeas del Censo 2024 (INE), que reúnen al 89 % de la población del país; quedan fuera las
+                viviendas rurales dispersas. Una manzana cuenta completa si alguna parte de ella está dentro de la distancia, así que
+                en manzanas grandes se incluye a quienes viven algo más lejos; por eso se da también la cifra con el centro de la
+                manzana. Plantación de 2022 (MapBiomas Chile, Colección 1).
+              </p>
+            </section>
+          )}
 
           <section aria-labelledby="fuego" className="max-w-3xl space-y-4">
             <h2 id="fuego" className="text-2xl font-semibold tracking-tight">Incendios de 2023 a 2025</h2>
@@ -307,6 +379,9 @@ export default async function FichaComuna({ params }: { params: Promise<{ slug: 
               Riesgo de Desastres (Ley 21.364).
               {f22.plantacion_100m_ha >= 1
                 ? ` Las ${ha(f22.plantacion_100m_ha)} a menos de 100 m son el primer lugar donde mirar al planificar cortafuegos, limpieza de bordes y rutas de evacuación.`
+                : ""}
+              {p && p["100m"].dificultad_mover > 0
+                ? ` Para los planes de evacuación, en las manzanas a menos de 100 m viven ${entero(p["100m"].dificultad_mover)} personas que no pueden caminar o subir escaleras, o lo hacen con mucha dificultad.`
                 : ""}{" "}
               También sirve al revisar el Plan Regulador Comunal y al evaluar dónde crece la ciudad, y se puede actualizar con
               cada nueva colección de MapBiomas.

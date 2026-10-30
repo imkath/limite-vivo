@@ -21,3 +21,6 @@ export function nombreRegion(r: string) {
   if (["Biobío", "Maule"].includes(r) || r.startsWith("Libertador")) return `Región del ${r}`;
   return `Región de ${r}`;
 }
+
+/** Número entero con separador de miles chileno ("12.345"). */
+export const entero = (v: number) => nf0.format(Math.round(v));
