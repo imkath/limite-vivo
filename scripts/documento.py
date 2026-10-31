@@ -85,6 +85,7 @@ for nivel, tam in ((1, 15), (2, 12.5)):
     h.font.color.rgb = RGBColor(0x16, 0x18, 0x1A)
     h.paragraph_format.space_before = Pt(14)
     h.paragraph_format.space_after = Pt(6)
+    h.paragraph_format.keep_with_next = True  # un título nunca queda solo al final de una página
 
 
 def p(texto, *, italic=False, size=None, align=None, color=None):
@@ -101,11 +102,24 @@ def p(texto, *, italic=False, size=None, align=None, color=None):
 
 
 def lista(items):
-    for t in items:
-        doc.add_paragraph(t, style="List Bullet")
+    pars = [doc.add_paragraph(t, style="List Bullet") for t in items]
+    # El último punto nunca queda solo al comienzo de una página
+    if len(pars) > 1:
+        pars[-2].paragraph_format.keep_with_next = True
 
 
-def tabla(cabecera, filas, anchos=None):
+def _fila_entera(row, encabezado=False):
+    """La fila no se corta entre páginas; la de encabezado se repite si la tabla continúa."""
+    trPr = row._tr.get_or_add_trPr()
+    trPr.append(OxmlElement("w:cantSplit"))
+    if encabezado:
+        trPr.append(OxmlElement("w:tblHeader"))
+
+
+def tabla(cabecera, filas, anchos=None, pie=None):
+    # La frase que presenta la tabla queda en la misma página que ella
+    if doc.paragraphs and doc.paragraphs[-1].text.strip():
+        doc.paragraphs[-1].paragraph_format.keep_with_next = True
     t = doc.add_table(rows=1, cols=len(cabecera))
     t.alignment = WD_TABLE_ALIGNMENT.LEFT
     t.style = "Table Grid"
@@ -130,7 +144,19 @@ def tabla(cabecera, filas, anchos=None):
         for row in t.rows:
             for i, w in enumerate(anchos):
                 row.cells[i].width = Cm(w)
-    doc.add_paragraph()
+    # Tabla junta: cada fila se mantiene con la siguiente (y la última con su pie, si lo tiene)
+    for k, row in enumerate(t.rows):
+        _fila_entera(row, encabezado=k == 0)
+        if k < len(t.rows) - 1 or pie:
+            for c in row.cells:
+                for par in c.paragraphs:
+                    par.paragraph_format.keep_with_next = True
+    if pie:
+        pp = p(pie, size=8.5, color="55595E")
+        pp.paragraph_format.space_before = Pt(3)
+        pp.paragraph_format.space_after = Pt(10)
+    else:
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
     return t
 
 
@@ -139,6 +165,7 @@ def imagen(slug, ancho_cm, pie):
     Image.open(f"web/public/mapas/{slug}.webp").convert("RGB").save(buf, "PNG")
     buf.seek(0)
     doc.add_picture(buf, width=Cm(ancho_cm))
+    doc.paragraphs[-1].paragraph_format.keep_with_next = True  # el mapa con su pie
     p(pie, size=8.5, color="55595E")
 
 
@@ -287,8 +314,8 @@ tabla(
     ["Distancia a zonas pobladas", "2000 (C1)", "2022 (C1)", "2000 (C2)", "2024 (C2)"],
     [[t, n0(c1["2000"][k]), n0(c1["2022"][k]), n0(c2["2000"][k]), n0(c2["2024"][k])] for k, t in (
         ("plantacion_100m_ha", "A menos de 100 m"), ("plantacion_200m_ha", "A menos de 200 m"), ("plantacion_500m_ha", "A menos de 500 m"))],
+    pie="Hectáreas de plantación forestal. C1 y C2: Colecciones 1 y 2 de MapBiomas Chile.",
 )
-p("Hectáreas de plantación forestal. C1 y C2: Colecciones 1 y 2 de MapBiomas Chile.", size=8.5, color="55595E")
 p(
     f"Leídas como franjas de protección, una franja de 100 m alrededor de las zonas pobladas abarcaría hoy "
     f"{n0(c1['2022']['plantacion_100m_ha'])} ha de plantación y una de 500 m, {n0(c1['2022']['plantacion_500m_ha'])} ha (Colección 1, "
@@ -342,8 +369,8 @@ tabla(
     ["Comuna", "Región", "Manzanas a menos de 100 m (personas)", "A menos de 500 m", "Parte de quienes viven en manzanas"],
     [[x["comuna"], x["region"], n0(x["personas"]), n0(x["personas_500m"]), f"{n1(x['personas'] / x['personas_total'] * 100)} %"]
      for x in r["top_personas"][:10]],
+    pie="Las 10 comunas con más personas en manzanas que llegan a menos de 100 m de plantación (criterio amplio).",
 )
-p("Las 10 comunas con más personas en manzanas que llegan a menos de 100 m de plantación (criterio amplio).", size=8.5, color="55595E")
 
 doc.add_heading("Historial de quema de los sectores", 2)
 p(
@@ -417,6 +444,7 @@ if REVISION:
     doc.add_heading("12. Revisión externa", 1)
     p(REVISION)
 
+doc.add_page_break()
 doc.add_heading("Referencias", 1)
 refs = [
     "Gelabert Vadillo, P., Félez Bernal, J., Crespo Pérez, R., Alcasena Urdioz, F. y Rodrigues Mimbrero, M. (2026). Cartografía y análisis de la Interfaz Urbano-Forestal en Chile. Actas del XXI Congreso de la Asociación Española de Teledetección. https://doi.org/10.17398/3101-7177.2.133",
@@ -441,7 +469,9 @@ for t in refs:
     par.paragraph_format.left_indent = Cm(0.6)
     par.paragraph_format.first_line_indent = Cm(-0.6)
     for run in par.runs:
-        run.font.size = Pt(9)
+        run.font.size = Pt(8.5)
+    par.paragraph_format.space_after = Pt(3)
+    par.paragraph_format.line_spacing = 1.1
 
 doc.add_heading("Cita de los datos de MapBiomas", 2)
 for t in (
@@ -450,8 +480,9 @@ for t in (
     "MapBiomas – Colección 1 de MapBiomas Fuego Chile (área quemada anual y frecuencia de quema), consultada el 30/10/2026 a través del enlace: https://chile.mapbiomas.org",
 ):
     par = doc.add_paragraph(t)
+    par.paragraph_format.space_after = Pt(3)
     for run in par.runs:
-        run.font.size = Pt(9)
+        run.font.size = Pt(8.5)
 
 doc.save("out/Limite_Vivo_MapBiomas_2026.docx")
 print("ok")
