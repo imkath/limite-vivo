@@ -12,3 +12,4 @@ web/.next/
 web/out/
 web/next-env.d.ts
 .DS_Store
+web/*.tsbuildinfo
