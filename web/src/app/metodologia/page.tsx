@@ -192,7 +192,8 @@ export default function Metodologia() {
           <li>
             Las franjas se recalcularon en seis comunas con un método independiente (polígonos, buffer en metros en proyección UTM
             y área elipsoidal). En la franja de 500 m los dos métodos difieren menos de 1 %, en la de 200 m menos de 3 % y en la de
-            100 m hasta 9 %, porque a esa distancia el tamaño del píxel pesa más.
+            100 m hasta 9 %, porque a esa distancia el tamaño del píxel pesa más. En las seis comunas el método principal dio
+            la cifra más baja, así que las hectáreas de la franja de 100 m tienden a quedarse cortas, no a exagerar.
           </li>
           <li>
             Hay pruebas automáticas para el filtro de zonas pobladas (un camino de 1 o 2 píxeles se elimina, una ciudad con un
